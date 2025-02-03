@@ -1,9 +1,9 @@
 version: '3'
 
-dotenv: ['polaris-spark-local/.env']
+dotenv: ['.env']
 
 tasks:
-  demo-create-catalog-local:
+  cli-create-catalog-local:
     desc: create local memory quickstart_catalog
     dir: ../polaris
     cmds:
@@ -17,7 +17,7 @@ tasks:
         --default-base-location ${DEFAULT_BASE_LOCATION} \
         quickstart_catalog
 
-  demo-create-principal:
+  cli-create-principal:
     desc: create a principal that has access to manage that catalog
     dir: ../polaris
     cmds:
@@ -44,7 +44,7 @@ tasks:
         --catalog quickstart_catalog \
         quickstart_catalog_role
 
-  demo-grant-roles:
+  cli-grant-roles:
     desc: we grant the principal the principal role we created, and grant the catalog role the principal role we created.
     cmds:
       - |
@@ -65,7 +65,7 @@ tasks:
         --principal-role quickstart_user_role \
         quickstart_catalog_role
 
-  demo-assign-privelege:
+  cli-assign-privelege:
     desc: This grants the catalog privileges CATALOG_MANAGE_CONTENT to our catalog role
     dir: ../polaris
     cmds:
@@ -80,7 +80,9 @@ tasks:
         --catalog-role quickstart_catalog_role \
         CATALOG_MANAGE_CONTENT
 
-  demo-spark:
+
+
+  cli-demo-spark:
     dir: ../spark
     desc: Run spark with polaris catalog file location = spark.sql("DESCRIBE FORMATTED quickstart_table").show(false)
     cmds:
@@ -100,8 +102,13 @@ tasks:
 
 
   activate-venv:
+    dir: ../polaris
     cmds:
       - source polaris-venv/bin/activate
+
+  print-env:
+    dotenv: ['.env']
+    cmd: env
 
   bootstrap-env:
     cmds:
@@ -110,3 +117,168 @@ tasks:
   catalogs-list:
     cmds:
       - ./polaris catalogs list
+
+  docker-build-spark-jupyter-image:
+    dir: ../
+    cmds:
+      - docker build -t "spark-jupyter" -f polaris-boot/polaris-spark-local/assets/Dockerfile .
+  docker-compose-up-polaris-spark-local:
+    cmds:
+      - docker compose -f polaris-spark-local/docker-compose.yml up
+
+  rest-get-auth-token:
+    dotenv: ['.env']
+    cmds:
+      - |
+        echo "PRINCIPAL_TOKEN=$(curl -i -X POST \
+        http://localhost:8181/api/catalog/v1/oauth/tokens \
+        -d "grant_type=client_credentials" \
+        -d "client_id=$CLIENT_ID" \
+        -d "client_secret=$CLIENT_SECRET" \
+        -d "scope=PRINCIPAL_ROLE:ALL" | awk -F\" '{print $4}'| tr -d '[:space:]')" >> .env
+
+  rest-create-catalog-local:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -i -X POST -H "Authorization: Bearer $PRINCIPAL_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' \
+        http://localhost:8181/api/management/v1/catalogs \
+        -d '{"name": "polariscatalog", "type": "INTERNAL", "properties": {
+              "default-base-location": "file:///data"
+          },"storageConfigInfo": {
+              "storageType": "FILE",
+              "allowedLocations": [
+                  "file:///data"
+              ]
+          } }'
+
+  rest-create-catalog-s3:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -i -X POST -H "Authorization: Bearer $PRINCIPAL_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' \
+        http://localhost:8181/api/management/v1/catalogs \
+        -d '{"name": "polariscatalog", "type": "INTERNAL", "properties": {
+              "default-base-location": "s3://my/s3/path"
+          },"storageConfigInfo": {
+              "roleArn": "arn:aws:iam::xxxxxxxxx:role/polaris-storage",
+              "storageType": "s3",
+              "allowedLocations": [
+                  "s3://my/s3/path"
+              ]
+          } }'
+
+  rest-list-catalogs:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -X GET "http://localhost:8181/api/management/v1/catalogs" \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN"
+
+  rest-create-principal-user:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -X POST "http://localhost:8181/api/management/v1/principals" \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{"name": "polarisuser", "type": "user"}'
+
+  rest-list-principals:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -X GET "http://localhost:8181/api/management/v1/principals" \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+        -H "Content-Type: application/json" \
+
+  rest-create-principal-role:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -X POST "http://localhost:8181/api/management/v1/principal-roles" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"principalRole": {"name": "polarisuserrole"}}'
+
+  rest-create-principal-read-only:
+    dotenv: ['.env']
+    cmds:
+      - echo "Creating readonly principle..."
+      - |
+        curl -X POST "http://localhost:8181/api/management/v1/principals" \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{"name": "read-only-user", "type": "user"}'
+
+      - echo "Creating read-only-principal-role..."
+      - |
+        curl -X POST "http://localhost:8181/api/management/v1/principal-roles" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"principalRole": {"name": "read-only-role"}}'
+
+      - echo "Assigning read-only-principal-role to read-only-principal..."
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/principals/read-only-user/principal-roles" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"principalRole": {"name": "read-only-role"}}'
+
+      - echo "Creating read-only-catalog-role..."
+      - |
+        curl -X POST "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles" \
+            -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"catalogRole": {"name": "read-only-catalog-role"}}'
+
+      - echo "Assigning read-only-catalog-role to read-only-principal-role..."
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/read-only-role/catalog-roles/polariscatalog" \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{"catalogRole": {"name": "read-only-catalog-role"}}'
+
+      - echo "Granting read-only-catalog-role CATALOG_READ_PROPERTIES..."
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/read-only-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "CATALOG_READ_PROPERTIES"}}'
+
+
+  rest-assign-principal-role:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/principals/polarisuser/principal-roles" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"principalRole": {"name": "polarisuserrole"}}'
+
+  rest-create-catalog-role:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -X POST "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"catalogRole": {"name": "polariscatalogrole"}}'
+
+  rest-assign-catalog-role:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/polarisuserrole/catalog-roles/polariscatalog" \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{"catalogRole": {"name": "polariscatalogrole"}}'
+
+  rest-grant-catalog-role-privelege:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/polariscatalogrole/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "CATALOG_MANAGE_CONTENT"}}'
