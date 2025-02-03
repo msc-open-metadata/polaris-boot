@@ -1,0 +1,42 @@
+services:
+  polaris:
+    image: apache/polaris:latest
+    container_name: polaris
+    ports:
+      - "8181:8181"
+      - "8182"
+    networks:
+      polaris-quickstart:
+    volumes:
+      - ./icebergdata:/data
+    environment:
+      - AWS_REGION=$AWS_REGION
+      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    healthcheck:
+          test: ["CMD", "curl", "http://localhost:8182/healthcheck"]
+          interval: 10s
+          timeout: 10s
+          retries: 5
+
+  jupyter-spark:
+    image: spark-jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      - AWS_REGION=$AWS_REGION
+      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+      - POLARIS_HOST=polaris
+    container_name: spark
+    networks:
+      polaris-quickstart:
+    depends_on:
+      polaris:
+        condition: service_healthy
+    volumes:
+      - ./icebergdata:/data
+      - ./notebooks:/home/docker/notebooks
+
+networks:
+  polaris-quickstart:
