@@ -182,7 +182,7 @@ tasks:
         curl -X POST "http://localhost:8181/api/management/v1/principals" \
         -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"name": "polarisuser", "type": "user"}'
+        -d '{"name": "engineer", "type": "user"}'
 
   rest-list-principals:
     dotenv: ['.env']
@@ -199,31 +199,35 @@ tasks:
         curl -X POST "http://localhost:8181/api/management/v1/principal-roles" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
-          -d '{"principalRole": {"name": "polarisuserrole"}}'
+          -d '{"principalRole": {"name": "engineer-role"}}'
 
-  rest-create-principal-read-only:
+  rest-bootstrap-hr:
     dotenv: ['.env']
     cmds:
-      - echo "Creating readonly principle..."
+      - echo "Creating hr-principal..."
       - |
         curl -X POST "http://localhost:8181/api/management/v1/principals" \
         -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"name": "read-only-user", "type": "user"}'
-
+        -d '{"name": "hr", "type": "user"}'
       - echo "Creating read-only-principal-role..."
       - |
         curl -X POST "http://localhost:8181/api/management/v1/principal-roles" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
-          -d '{"principalRole": {"name": "read-only-role"}}'
+          -d '{"principalRole": {"name": "hr-role"}}'
 
-      - echo "Assigning read-only-principal-role to read-only-principal..."
+      - echo "Assigning hr-role to principals..."
       - |
-        curl -X PUT "http://localhost:8181/api/management/v1/principals/read-only-user/principal-roles" \
+        curl -X PUT "http://localhost:8181/api/management/v1/principals/engineer/principal-roles" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
-          -d '{"principalRole": {"name": "read-only-role"}}'
+          -d '{"principalRole": {"name": "hr-role"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/principals/hr/principal-roles" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"principalRole": {"name": "hr-role"}}'
 
       - echo "Creating read-only-catalog-role..."
       - |
@@ -234,7 +238,7 @@ tasks:
 
       - echo "Assigning read-only-catalog-role to read-only-principal-role..."
       - |
-        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/read-only-role/catalog-roles/polariscatalog" \
+        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/hr-role/catalog-roles/polariscatalog" \
         -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
         -H "Content-Type: application/json" \
         -d '{"catalogRole": {"name": "read-only-catalog-role"}}'
@@ -244,17 +248,72 @@ tasks:
         curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/read-only-catalog-role/grants" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
-          -d '{"grant": {"type": "catalog", "privilege": "CATALOG_READ_PROPERTIES"}}'
+          -d '{"grant": {"type": "catalog", "privilege": "TABLE_LIST"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/read-only-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "TABLE_READ_PROPERTIES"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/read-only-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "TABLE_READ_DATA"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/read-only-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "VIEW_LIST"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/read-only-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "VIEW_READ_PROPERTIES"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/read-only-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "NAMESPACE_READ_PROPERTIES"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/read-only-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "NAMESPACE_LIST"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/read-only-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "LOAD_NAMESPACE_METADATA"}}'
+
+  rest-list-grants-for-catalog-role:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -X GET "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/$CATALOG_ROLE/grants" \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN"
+    env:
+      CATALOG_ROLE: read-only-catalog-role
+
+  rest-list-catalog-roles-for-principal-role:
+    dotenv: ['.env']
+    cmds:
+      - |
+        curl -X GET "http://localhost:8181/api/management/v1/principal-roles/$PRINCIPAL_ROLE/catalog-roles/$CATALOG" \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN"
+    env:
+      PRINCIPAL_ROLE: hr-role
+      CATALOG: polariscatalog
+
 
 
   rest-assign-principal-role:
     dotenv: ['.env']
     cmds:
       - |
-        curl -X PUT "http://localhost:8181/api/management/v1/principals/polarisuser/principal-roles" \
+        curl -X PUT "http://localhost:8181/api/management/v1/principals/engineer/principal-roles" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
-          -d '{"principalRole": {"name": "polarisuserrole"}}'
+          -d '{"principalRole": {"name": "engineer-role"}}'
 
   rest-create-catalog-role:
     dotenv: ['.env']
@@ -263,22 +322,34 @@ tasks:
         curl -X POST "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
-          -d '{"catalogRole": {"name": "polariscatalogrole"}}'
+          -d '{"catalogRole": {"name": "engineer-catalog-role"}}'
 
   rest-assign-catalog-role:
     dotenv: ['.env']
     cmds:
       - |
-        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/polarisuserrole/catalog-roles/polariscatalog" \
+        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/engineer-role/catalog-roles/polariscatalog" \
         -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"catalogRole": {"name": "polariscatalogrole"}}'
+        -d '{"catalogRole": {"name": "engineer-catalog-role"}}'
 
   rest-grant-catalog-role-privelege:
     dotenv: ['.env']
     cmds:
       - |
-        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/polariscatalogrole/grants" \
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/engineer-catalog-role/grants" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
           -d '{"grant": {"type": "catalog", "privilege": "CATALOG_MANAGE_CONTENT"}}'
+
+  rest-bootsrap-engineer:
+     dotenv: ['.env']
+     cmds:
+       - task rest-get-auth-token
+       - task rest-create-catalog-local
+       - task rest-create-principal-user
+       - task rest-create-principal-role
+       - task rest-assign-principal-role
+       - task rest-create-catalog-role
+       - task rest-assign-catalog-role
+       - task rest-grant-catalog-role-privelege
