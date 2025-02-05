@@ -2,7 +2,7 @@
 FROM debian:bullseye-slim
 
 ## Create and use a Non-Root User
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends dialog apt-utils
 RUN apt-get update && apt-get -y install sudo wget curl nano
 RUN useradd -m docker && echo "docker:docker" | chpasswd && adduser docker sudo
@@ -20,9 +20,12 @@ RUN echo 'export PATH=$PATH:$JAVA_HOME/bin' | sudo tee -a /etc/profile.d/jdk.sh
 ## Load JAVA_HOME variable in current shell for subsequent commands
 RUN . /etc/profile.d/jdk.sh
 
-# # Install Python dependencies for Jupyter and Spark
-RUN sudo apt-get install -y python3-pip python3-dev && \
-     pip3 install --upgrade pip
+## Install Python dependencies for Jupyter and Spark with UV
+#RUN sudo apt-get install -y python3-pip python3-dev
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+## Install git
+RUN sudo apt-get -y install git
 
 ## mount apache spark
 COPY /spark /opt/spark
@@ -36,11 +39,12 @@ RUN echo 'export PYSPARK_PYTHON=/usr/bin/python3' >> ~/.bashrc
 RUN echo 'SPARK_MASTER_HOST=0.0.0.0' >> ~/.bashrc
 
 ## Install PySpark
-RUN pip install jupyterlab notebook pyspark
+RUN uv init && rm hello.py
+RUN uv add pyspark
 
 # Expose the necessary ports for Spark and Jupyter
 EXPOSE 8888
 EXPOSE 4040
 
 ## Start Container
-CMD ["bash", "-c", "~/.local/bin/jupyter lab --ip='0.0.0.0' --port=8888"]
+CMD ["bash", "-c", "uv run --with jupyter jupyter lab --ip='0.0.0.0' --port=8888"]
