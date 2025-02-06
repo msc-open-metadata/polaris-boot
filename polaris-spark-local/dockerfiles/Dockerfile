@@ -40,7 +40,6 @@ RUN echo 'SPARK_MASTER_HOST=0.0.0.0' >> ~/.bashrc
 
 ## Install PySpark
 RUN uv init && rm hello.py
-RUN uv add pyspark
 
 # Expose the necessary ports for Spark and Jupyter
 EXPOSE 8888
