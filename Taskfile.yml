@@ -121,7 +121,7 @@ tasks:
   docker-build-spark-jupyter-image:
     dir: ../
     cmds:
-      - docker build -t "spark-jupyter" -f polaris-boot/polaris-spark-local/assets/Dockerfile .
+      - docker build -t "spark-jupyter" -f polaris-boot/polaris-spark-local/dockerfiles/Dockerfile .
   docker-compose-up-polaris-spark-local:
     cmds:
       - docker compose -f polaris-spark-local/docker-compose.yml up
