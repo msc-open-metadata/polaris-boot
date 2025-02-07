@@ -12,9 +12,9 @@ WORKDIR /home/docker/
 
 
 ## Install Java 11 and Set JAVA_HOME
-RUN sudo apt-get update && sudo apt-get install -y openjdk-11-jdk
+RUN sudo apt-get update && sudo apt-get install -y openjdk-17-jdk
 # Set JAVA_HOME for all users
-RUN echo 'export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64' | sudo tee /etc/profile.d/jdk.sh
+RUN echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' | sudo tee /etc/profile.d/jdk.sh
 RUN echo 'export PATH=$PATH:$JAVA_HOME/bin' | sudo tee -a /etc/profile.d/jdk.sh
 
 ## Load JAVA_HOME variable in current shell for subsequent commands
