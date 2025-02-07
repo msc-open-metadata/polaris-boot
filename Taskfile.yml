@@ -93,7 +93,7 @@ tasks:
         --conf spark.sql.catalog.quickstart_catalog.warehouse=quickstart_catalog \
         --conf spark.sql.catalog.quickstart_catalog.header.X-Iceberg-Access-Delegation=vended-credentials \
         --conf spark.sql.catalog.quickstart_catalog=org.apache.iceberg.spark.SparkCatalog \
-        --conf spark.sql.catalog.quickstart_catalog.catalog-impl=org.apache.iceberg.rest.RESTCatalog \
+        --conf spark.sql.catalog.quickstart_catalog.catalog-impl=org.apache.iceberg.rest:RESTCatalog \
         --conf spark.sql.catalog.quickstart_catalog.uri=http://localhost:8181/api/catalog \
         --conf spark.sql.catalog.quickstart_catalog.credential=${PRINCIPAL_CLIENT_ID}:${PRINCIPAL_CLIENT_SECRET} \
         --conf spark.sql.catalog.quickstart_catalog.scope='PRINCIPAL_ROLE:ALL' \
@@ -118,15 +118,26 @@ tasks:
     cmds:
       - ./polaris catalogs list
 
-  docker-build-spark-jupyter-image:
+  docker:build:spark-jupyter-image:
     dir: ../
     cmds:
       - docker build -t "spark-jupyter" -f polaris-boot/polaris-spark-local/dockerfiles/Dockerfile .
-  docker-compose-up-polaris-spark-local:
+  docker:compose:up-polaris-spark-local:
     cmds:
       - docker compose -f polaris-spark-local/docker-compose.yml up
+  docker:compose:up-polaris-spark-local-postgres:
+    cmds:
+      - docker compose -f polaris-spark-local-postgres/docker-compose.yml up
 
-  rest-get-auth-token:
+  gradle:build-polaris-postgres:
+    dir: ../polaris-fork
+    cmd: |
+      ./gradlew :polaris-quarkus-server:assemble :polaris-quarkus-admin:assemble \
+       -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
+       -Dquarkus.container-image.tag=postgres-latest \
+       -Dquarkus.container-image.build=true
+
+  rest:get-auth-token:
     dotenv: ['.env']
     cmds:
       - |
@@ -135,24 +146,32 @@ tasks:
         -d "grant_type=client_credentials" \
         -d "client_id=$CLIENT_ID" \
         -d "client_secret=$CLIENT_SECRET" \
-        -d "scope=PRINCIPAL_ROLE:ALL" | awk -F\" '{print $4}'| tr -d '[:space:]')" >> .env
+        -d "scope=PRINCIPAL_ROLE:ALL" | awk -F\" '{print $4}'| tr -d '[:space:]')" | sed -i '' "s/^PRINCIPAL_TOKEN=.*/$(cat)/" .env
 
-  rest-create-catalog-local:
+  rest:create-catalog-local:
     dotenv: ['.env']
     cmds:
       - |
         curl -i -X POST -H "Authorization: Bearer $PRINCIPAL_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' \
         http://localhost:8181/api/management/v1/catalogs \
-        -d '{"name": "polariscatalog", "type": "INTERNAL", "properties": {
-              "default-base-location": "file:///data"
-          },"storageConfigInfo": {
-              "storageType": "FILE",
-              "allowedLocations": [
-                  "file:///data"
-              ]
-          } }'
+        -d '{
+             "catalog": {
+               "name": "polaris",
+               "type": "INTERNAL",
+               "readOnly": false,
+               "properties": {
+                 "default-base-location": "file:///tmp/polaris/"
+               },
+               "storageConfigInfo": {
+                 "storageType": "FILE",
+                 "allowedLocations": [
+                   "file:///tmp"
+                 ]
+               }
+             }
+           }'
 
-  rest-create-catalog-s3:
+  rest:create-catalog-s3:
     dotenv: ['.env']
     cmds:
       - |
@@ -168,23 +187,19 @@ tasks:
               ]
           } }'
 
-  rest-list-catalogs:
+  rest:list-catalogs:
     dotenv: ['.env']
     cmds:
       - |
         curl -X GET "http://localhost:8181/api/management/v1/catalogs" \
         -H "Authorization: Bearer $PRINCIPAL_TOKEN"
 
-  rest-create-principal-user:
+  rest:create-principal-user:
     dotenv: ['.env']
     cmds:
-      - |
-        curl -X POST "http://localhost:8181/api/management/v1/principals" \
-        -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
-        -H "Content-Type: application/json" \
-        -d '{"name": "engineer", "type": "user"}'
+      - python utils/create-principal.py engineer $PRINCIPAL_TOKEN
 
-  rest-list-principals:
+  rest:list-principals:
     dotenv: ['.env']
     cmds:
       - |
@@ -192,7 +207,7 @@ tasks:
         -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
         -H "Content-Type: application/json" \
 
-  rest-create-principal-role:
+  rest:create-principal-role:
     dotenv: ['.env']
     cmds:
       - |
@@ -201,7 +216,7 @@ tasks:
           -H "Content-Type: application/json" \
           -d '{"principalRole": {"name": "engineer-role"}}'
 
-  rest-bootstrap-hr:
+  rest:bootstrap-hr:
     dotenv: ['.env']
     cmds:
       - echo "Creating hr-principal..."
@@ -285,7 +300,7 @@ tasks:
           -H "Content-Type: application/json" \
           -d '{"grant": {"type": "catalog", "privilege": "LOAD_NAMESPACE_METADATA"}}'
 
-  rest-list-grants-for-catalog-role:
+  rest:list-grants-for-catalog-role:
     dotenv: ['.env']
     cmds:
       - |
@@ -294,7 +309,7 @@ tasks:
     env:
       CATALOG_ROLE: read-only-catalog-role
 
-  rest-list-catalog-roles-for-principal-role:
+  rest:list-catalog-roles-for-principal-role:
     dotenv: ['.env']
     cmds:
       - |
@@ -306,7 +321,7 @@ tasks:
 
 
 
-  rest-assign-principal-role:
+  rest:assign-principal-role:
     dotenv: ['.env']
     cmds:
       - |
@@ -315,7 +330,7 @@ tasks:
           -H "Content-Type: application/json" \
           -d '{"principalRole": {"name": "engineer-role"}}'
 
-  rest-create-catalog-role:
+  rest:create-catalog-role:
     dotenv: ['.env']
     cmds:
       - |
@@ -324,7 +339,7 @@ tasks:
           -H "Content-Type: application/json" \
           -d '{"catalogRole": {"name": "engineer-catalog-role"}}'
 
-  rest-assign-catalog-role:
+  rest:assign-catalog-role:
     dotenv: ['.env']
     cmds:
       - |
@@ -333,7 +348,7 @@ tasks:
         -H "Content-Type: application/json" \
         -d '{"catalogRole": {"name": "engineer-catalog-role"}}'
 
-  rest-grant-catalog-role-privelege:
+  rest:grant-catalog-role-privelege:
     dotenv: ['.env']
     cmds:
       - |
@@ -342,14 +357,14 @@ tasks:
           -H "Content-Type: application/json" \
           -d '{"grant": {"type": "catalog", "privilege": "CATALOG_MANAGE_CONTENT"}}'
 
-  rest-bootsrap-engineer:
+  rest:bootsrap-engineer:
      dotenv: ['.env']
      cmds:
-       - task rest-get-auth-token
-       - task rest-create-catalog-local
-       - task rest-create-principal-user
-       - task rest-create-principal-role
-       - task rest-assign-principal-role
-       - task rest-create-catalog-role
-       - task rest-assign-catalog-role
-       - task rest-grant-catalog-role-privelege
+       - task rest:get-auth-token
+       - task rest:create-catalog-local
+       - task rest:create-principal-user
+       - task rest:create-principal-role
+       - task rest:assign-principal-role
+       - task rest:create-catalog-role
+       - task rest:assign-catalog-role
+       - task rest:grant-catalog-role-privelege
