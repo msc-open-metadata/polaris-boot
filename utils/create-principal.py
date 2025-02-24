@@ -1,7 +1,7 @@
-import requests
-from sys import argv
 import os
+from sys import argv
 
+import requests
 from requests.models import HTTPError
 
 SECRETS_DIR = "./secrets"
@@ -10,20 +10,15 @@ try:
     print(f"args: {len(argv)}")
     name = argv[1]
     token = argv[2]
-except:
+except Exception as e:
     print("Usage: ./create-princple.py <string:name> <string:access_token>")
+    print(f"Error: {e}")
     exit(1)
 
 
 url = "http://localhost:8181/api/management/v1/principals"
-headers = {
-    "Authorization": f"Bearer {token}",
-    "Content-Type": "application/json"
-}
-data = {
-    "name": f"{name}",
-    "type": "user"
-}
+headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+data = {"name": f"{name}", "type": "user"}
 
 response = requests.post(url, headers=headers, json=data)
 
@@ -49,4 +44,9 @@ except HTTPError as e:
     print(f"Error: {e}")
     print(f"Response: {response.text}")
     print(f"Failed to create principle: {name}")
-    exit(1)
+    if response.status_code == 401:
+        print(f"Unauthorized. Check your access token: {token}")
+        exit(1)
+    if response.status_code == 409:
+        print(f"Principal already exists: {name}")
+        exit(0)

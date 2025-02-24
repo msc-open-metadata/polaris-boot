@@ -3,6 +3,26 @@ version: '3'
 dotenv: ['.env']
 
 tasks:
+
+  init:
+    desc: init repo
+    cmds:
+      - task: init:pre-commit
+      - task: install
+
+  install:
+    desc: Install dependencies
+    cmds:
+      - uv sync
+
+  init:pre-commit:
+    desc: Install pre-commit hooks
+    cmds:
+      - uv add pre-commit --dev
+      - uv run pre-commit install --hook-type commit-msg
+
+
+
   cli-create-catalog-local:
     desc: create local memory quickstart_catalog
     dir: ../polaris
@@ -122,6 +142,12 @@ tasks:
     dir: ../
     cmds:
       - docker build -t "spark-jupyter" -f polaris-boot/polaris-spark-local/dockerfiles/Dockerfile .
+
+  docker:build:polaris-local:
+    dir: ../polaris-fork
+    cmd: ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true
+
+
   docker:compose:up-polaris-spark-local:
     cmds:
       - docker compose -f polaris-spark-local/docker-compose.yml up
@@ -334,7 +360,7 @@ tasks:
     dotenv: ['.env']
     cmds:
       - |
-        curl -X POST "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles" \
+        curl -X POST "http://localhost:8181/api/management/v1/catalogs/polaris/catalog-roles" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
           -d '{"catalogRole": {"name": "engineer-catalog-role"}}'
@@ -343,7 +369,7 @@ tasks:
     dotenv: ['.env']
     cmds:
       - |
-        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/engineer-role/catalog-roles/polariscatalog" \
+        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/engineer-role/catalog-roles/polaris" \
         -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
         -H "Content-Type: application/json" \
         -d '{"catalogRole": {"name": "engineer-catalog-role"}}'
@@ -352,7 +378,7 @@ tasks:
     dotenv: ['.env']
     cmds:
       - |
-        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polariscatalog/catalog-roles/engineer-catalog-role/grants" \
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/polaris/catalog-roles/engineer-catalog-role/grants" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
           -d '{"grant": {"type": "catalog", "privilege": "CATALOG_MANAGE_CONTENT"}}'
