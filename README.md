@@ -3,7 +3,11 @@
 Infrastructure for booting an instance of Apache Polaris that runs locally or in S3 using Spark
 
 ## Getting started:
-1. Install task
+1. Install task and initialize dev env
+```bash
+# init commitlint and secret files
+task init
+```
 2. Clone the polaris repository and build the docker image
 ```bash
 git clone https://github.com/msc-open-metadata/polaris.git ..

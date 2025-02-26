@@ -6,6 +6,8 @@ tasks:
     cmds:
       - task: init:pre-commit
       - uv sync
+      - mkdir secrets
+      - cp example.env secret.env
 
   init:pre-commit:
     desc: Install pre-commit hooks
