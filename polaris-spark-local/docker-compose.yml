@@ -37,6 +37,15 @@ services:
     volumes:
       - ./icebergdata:/data
       - ./notebooks:/home/docker/notebooks
+    secrets:
+      - engineer_client_id
+      - engineer_client_secret
 
 networks:
   polaris-quickstart:
+
+secrets:
+  engineer_client_id:
+    file: secrets/engineer-client-id
+  engineer_client_secret:
+    file: secrets/engineer-client-secret
