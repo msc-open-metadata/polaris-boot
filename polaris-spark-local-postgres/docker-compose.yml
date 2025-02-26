@@ -11,10 +11,11 @@ services:
       # Optional, allows attaching a debugger to the Polaris JVM
       - "5005:5005"
     depends_on:
-      polaris-bootstrap:
-        condition: service_completed_successfully
       postgres:
         condition: service_healthy
+      polaris-bootstrap:
+        condition: service_started
+
     volumes:
       - ./icebergdata:/data
       - ./assets/eclipselink/:/deployments/config/eclipselink
@@ -86,6 +87,8 @@ services:
     secrets:
       - engineer_client_id
       - engineer_client_secret
+      - hr_client_id
+      - hr_client_secret
 
 
 secrets:
@@ -93,3 +96,7 @@ secrets:
     file: ../secrets/engineer-client-id
   engineer_client_secret:
     file: ../secrets/engineer-client-secret
+  hr_client_id:
+    file: ../secrets/hr-client-id
+  hr_client_secret:
+    file: ../secrets/hr-client-secret

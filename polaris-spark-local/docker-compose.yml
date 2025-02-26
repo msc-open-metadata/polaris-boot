@@ -40,6 +40,8 @@ services:
     secrets:
       - engineer_client_id
       - engineer_client_secret
+      - hr_client_id
+      - hr_client_secret
 
 networks:
   polaris-quickstart:
@@ -49,3 +51,7 @@ secrets:
     file: secrets/engineer-client-id
   engineer_client_secret:
     file: secrets/engineer-client-secret
+  hr_client_id:
+    file: ../secrets/hr-client-id
+  hr_client_secret:
+    file: ../secrets/hr-client-secret

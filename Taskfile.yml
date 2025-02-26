@@ -247,7 +247,7 @@ tasks:
     dotenv: [".env"]
     cmds:
       - echo "Creating hr-principal..."
-      - uv run python  utils/create-principal.py engineer $PRINCIPAL_TOKEN
+      - uv run python  utils/create-principal.py hr $PRINCIPAL_TOKEN
       - echo "Creating read-only-principal-role..."
       - |
         curl -X POST "http://localhost:8181/api/management/v1/principal-roles" \
