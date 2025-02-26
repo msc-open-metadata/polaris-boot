@@ -1,5 +1,5 @@
 services:
-  polaris:
+  polaris-postgres:
     # IMPORTANT: the image MUST contain the Postgres JDBC driver and EclipseLink dependencies, see README for instructions
     image: apache/polaris:postgres-latest
     container_name: polaris
@@ -78,7 +78,7 @@ services:
       - POLARIS_HOST=POLARIS
     container_name: spark
     depends_on:
-      polaris:
+      polaris-postgres:
         condition: service_healthy
     volumes:
       - ./icebergdata:/data

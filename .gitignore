@@ -171,3 +171,13 @@ cython_debug/
 .pypirc
 
 secrets
+
+**.local
+
+**metastore_db
+
+**.DS_Store
+
+**/icebergdata/**
+
+**.jupyter

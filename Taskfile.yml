@@ -144,8 +144,19 @@ tasks:
       - docker build -t "spark-jupyter" -f polaris-boot/polaris-spark-local/dockerfiles/Dockerfile .
 
   docker:build:polaris-local:
-    dir: ../polaris-fork
+    dir: ../polaris
     cmd: ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true
+  docker:build:spark:
+    dir: ../spark
+    cmd: ./build/mvn -DskipTests clean package
+  docker:build:polaris-postgres-img:
+    dir: ../polaris
+    cmd: |
+      ./gradlew clean :polaris-quarkus-server:assemble :polaris-quarkus-admin:assemble \
+       -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
+       -Dquarkus.container-image.tag=postgres-latest \
+       -Dquarkus.container-image.build=true \
+       --no-build-cache
 
 
   docker:compose:up-polaris-spark-local:
