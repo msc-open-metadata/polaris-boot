@@ -1,6 +1,8 @@
 # polaris-boot
 
-Infrastructure for booting an instance of Apache Polaris that runs locally or in S3 using Spark
+Repository containing:
+- Infrastructure for booting an instance of Apache Polaris that runs locally or in S3 using Spark
+- Documentation on adding additional functionality to our polaris fork:
 
 ## Getting started:
 1. Install task and initialize dev env
@@ -40,6 +42,12 @@ task rest:bootstrap-hr
   The spark-jupyter container outputs a URL with a token to the local jupyter instance
   - Open then local notebook. Example: curl http://localhost:8888/?token=<token>
 
+
+
+## Changes in open-metadata/polaris
+
+- Add spec/open-dic-service.yml
+-
 
 ## Adding a new endpoint to Polaris:
 
