@@ -15,7 +15,6 @@ services:
         condition: service_healthy
       polaris-bootstrap:
         condition: service_started
-
     volumes:
       - ./icebergdata:/data
       - ./assets/eclipselink/:/deployments/config/eclipselink
@@ -30,66 +29,77 @@ services:
       polaris.realm-context.realms: POLARIS
       quarkus.otel.sdk.disabled: "true"
     healthcheck:
-          test: ["CMD", "curl", "http://localhost:8182/healthcheck"]
-          interval: 10s
-          timeout: 10s
-          retries: 5
+      test: ["CMD", "curl", "http://localhost:8182/healthcheck"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    networks:
+      - iceberg_net
 
   polaris-bootstrap:
-      # IMPORTANT: the image MUST contain the Postgres JDBC driver and EclipseLink dependencies, see README for instructions
-      image: apache/polaris-admin-tool:postgres-latest
-      depends_on:
-        postgres:
-          condition: service_healthy
-      environment:
-        polaris.persistence.type: eclipse-link
-        polaris.persistence.eclipselink.configuration-file: /deployments/config/eclipselink/persistence.xml
-      volumes:
-        - ./assets/eclipselink/:/deployments/config/eclipselink
-      command:
-        - "bootstrap"
-        - "--realm=POLARIS"
-        - "--credential=POLARIS,root,s3cr3t"
+    # IMPORTANT: the image MUST contain the Postgres JDBC driver and EclipseLink dependencies, see README for instructions
+    image: apache/polaris-admin-tool:postgres-latest
+    container_name: polaris-bootstrap
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      polaris.persistence.type: eclipse-link
+      polaris.persistence.eclipselink.configuration-file: /deployments/config/eclipselink/persistence.xml
+    volumes:
+      - ./assets/eclipselink/:/deployments/config/eclipselink
+    command:
+      - "bootstrap"
+      - "--realm=POLARIS"
+      - "--credential=POLARIS,root,s3cr3t"
+    networks:
+      - iceberg_net
 
   postgres:
-      image: postgres:17.2
-      ports:
-        - "5432:5432"
-      # set shared memory limit when using docker-compose
-      shm_size: 128mb
-      environment:
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: postgres
-        POSTGRES_DB: POLARIS
-        POSTGRES_INITDB_ARGS: "--encoding UTF8 --data-checksums"
-      healthcheck:
-        test: "pg_isready -U postgres"
-        interval: 5s
-        timeout: 2s
-        retries: 15
-
-  jupyter-spark:
-    image: spark-jupyter
+    image: postgres:17.2
+    container_name: postgres
     ports:
-      - "8888:8888"
+      - "5432:5432"
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
     environment:
-      - AWS_REGION=$AWS_REGION
-      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-      - POLARIS_HOST=POLARIS
-    container_name: spark
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: POLARIS
+      POSTGRES_INITDB_ARGS: "--encoding UTF8 --data-checksums"
+    healthcheck:
+      test: "pg_isready -U postgres"
+      interval: 5s
+      timeout: 2s
+      retries: 15
+    networks:
+      - iceberg_net
+
+  spark-iceberg:
+    image: tabulario/spark-iceberg
+    container_name: spark-iceberg
+    build: spark/
+    networks:
+      iceberg_net:
     depends_on:
-      polaris-postgres:
-        condition: service_healthy
+      - polaris-postgres
     volumes:
-      - ./icebergdata:/data
-      - ./notebooks:/home/docker/notebooks
+      - ./warehouse:/home/iceberg/warehouse
+      - ./notebooks:/home/iceberg/notebooks/notebooks
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+    ports:
+      - 8888:8888
+      - 8080:8080
+      - 10000:10000
+      - 10001:10001
     secrets:
       - engineer_client_id
       - engineer_client_secret
       - hr_client_id
       - hr_client_secret
-
 
 secrets:
   engineer_client_id:
@@ -100,3 +110,6 @@ secrets:
     file: ../secrets/hr-client-id
   hr_client_secret:
     file: ../secrets/hr-client-secret
+
+networks:
+  iceberg_net:
