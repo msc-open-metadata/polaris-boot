@@ -26,7 +26,7 @@ def get_auth_token() -> str:
         return token
     except HTTPError as e:
            print(f"Error: {e}")
-           print(f"Response: {response.text}")
+           print(f"Response: {response.text} ")
            exit(1)
 
 def test_create_udo():
