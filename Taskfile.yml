@@ -6,8 +6,9 @@ tasks:
     cmds:
       - task: init:pre-commit
       - uv sync
-      - mkdir secrets
-      - cp example.env secret.env
+      - mkdir -p secrets
+      - touch secrets/hr-client-id secrets/hr-client-secret secrets/engineer-client-secret secrets/engineer-client-id
+      - cp example.env .env
 
   init:pre-commit:
     desc: Install pre-commit hooks
@@ -128,13 +129,13 @@ tasks:
       - ./polaris catalogs list
 
   docker:build:spark-jupyter-image:
-    dir: ../
+    dir: polaris-spark-local
     cmds:
-      - docker build -t "spark-jupyter" -f polaris-boot/assets/Dockerfile .
+      - docker build -t "spark-jupyter" -f Dockerfile .
 
   build:polaris-local:
     dir: ../polaris
-    cmd: ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true --no-build-cache
+    cmd: ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true -PincludeOpendic --no-build-cache
 
   build:spark:
     dir: ../spark
@@ -164,7 +165,7 @@ tasks:
        -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
        -Dquarkus.container-image.tag=postgres-latest \
        -Dquarkus.container-image.build=true \
-       -PincludeOpendic=true
+       -PincludeOpendic=true \
        --no-build-cache
 
   docker:compose:up-polaris-spark-local:
