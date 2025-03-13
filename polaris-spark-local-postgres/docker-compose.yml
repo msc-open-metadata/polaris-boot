@@ -28,6 +28,8 @@ services:
       polaris.persistence.eclipselink.configuration-file: /deployments/config/eclipselink/persistence.xml
       polaris.realm-context.realms: POLARIS
       quarkus.otel.sdk.disabled: "true"
+      QUARKUS_LOG_LEVEL: DEBUG
+
     healthcheck:
       test: ["CMD", "curl", "http://localhost:8182/healthcheck"]
       interval: 10s
@@ -56,8 +58,7 @@ services:
       - iceberg_net
 
   postgres:
-    image: postgres:17.2
-    container_name: postgres
+    image: postgres:17.4-alpine
     ports:
       - "5432:5432"
     # set shared memory limit when using docker-compose
