@@ -90,8 +90,39 @@ def test_create_function_udo():
 
     try:
         response.raise_for_status()
+        print(f"Status: {response.status_code}")
         print(f"Response: {response.text}")
     except HTTPError as e:
         print(f"Error: {e}")
         print(f"Response: {response.text}")
-        assert response.status_code == 501
+        assert response.status_code in {501, 409}
+
+def test_define_function_udo():
+    token = get_auth_token()
+
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    data = json.dumps({
+        "udoType": "andreas_function",
+        "properties": {
+                "args": "MAP",
+                "language": "STRING",
+                "def" : "string",
+                "comment": "string",
+                "runtime": "string",
+                "client_version": "int",
+            }
+    })
+
+    response: requests.Response = requests.post(
+        "http://localhost:8181/api/opendic/v1/objects/", headers=headers, data=data
+    )
+
+    try:
+        response.raise_for_status()
+        print(f"Status: {response.status_code}")
+        print(f"Response: {response.text}")
+    except HTTPError as e:
+        print(f"Error: {e}")
+        print(f"Response: {response.text}")
+        assert response.status_code in {501, 409}

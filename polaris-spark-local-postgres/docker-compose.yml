@@ -1,7 +1,7 @@
 services:
   polaris-postgres:
     # IMPORTANT: the image MUST contain the Postgres JDBC driver and EclipseLink dependencies, see README for instructions
-    image: apache/polaris:postgres-latest
+    image: apache/polaris
     container_name: polaris
     ports:
       # API port
@@ -37,10 +37,15 @@ services:
       retries: 5
     networks:
       - iceberg_net
+    secrets:
+      - engineer_client_id
+      - engineer_client_secret
+      - hr_client_id
+      - hr_client_secret
 
   polaris-bootstrap:
     # IMPORTANT: the image MUST contain the Postgres JDBC driver and EclipseLink dependencies, see README for instructions
-    image: apache/polaris-admin-tool:postgres-latest
+    image: apache/polaris-admin-tool
     container_name: polaris-bootstrap
     depends_on:
       postgres:

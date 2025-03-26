@@ -146,27 +146,42 @@ tasks:
     cmd: |
       ./gradlew clean :polaris-quarkus-server:assemble :polaris-quarkus-admin:assemble \
        -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
-       -Dquarkus.container-image.tag=postgres-latest \
        -Dquarkus.container-image.build=true \
        --no-build-cache
 
   build:polaris-opendic:
     dir: ../polaris
-    cmd: |
-      ../gradlew clean :polaris-quarkus-server:assemble \
-       -Dquarkus.container-image.build=true \
-       -PincludeOpendic=true \
-       --no-build-cache
+    cmds:
+      - |
+        ../gradlew clean :polaris-quarkus-server:assemble \
+        -Dquarkus.container-image.build=true \
+        -PincludeOpendic=true \
+        --no-build-cache
+      - docker image rmi apache/polaris:1.0.0-incubating-SNAPSHOT apache/polaris-admin-tool:1.0.0-incubating-SNAPSHOT
+      - docker image prune
 
+  build:polaris-opendic-postgres-admin:
+    dir: ../polaris
+    cmds:
+      - |
+        ./gradlew clean :polaris-quarkus-server:assemble :polaris-quarkus-admin:assemble \
+        -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
+        -Dquarkus.container-image.build=true \
+        -PincludeOpendic=true \
+        --no-build-cache
+      - docker image rmi apache/polaris:1.0.0-incubating-SNAPSHOT apache/polaris-admin-tool:1.0.0-incubating-SNAPSHOT
+      - docker image prune
   build:polaris-opendic-postgres:
     dir: ../polaris
-    cmd: |
-      ./gradlew clean :polaris-quarkus-server:assemble :polaris-quarkus-admin:assemble \
-       -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
-       -Dquarkus.container-image.tag=postgres-latest \
-       -Dquarkus.container-image.build=true \
-       -PincludeOpendic=true \
-       --no-build-cache
+    cmds:
+      - |
+        ./gradlew clean :polaris-quarkus-server:assemble \
+        -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
+        -Dquarkus.container-image.build=true \
+        -PincludeOpendic=true \
+        --no-build-cache
+      - docker image rmi apache/polaris:1.0.0-incubating-SNAPSHOT apache/polaris-admin-tool:1.0.0-incubating-SNAPSHOT
+      - docker image prune
 
   docker:compose:up-polaris-spark-local:
     cmds:
@@ -197,6 +212,24 @@ tasks:
         -d "client_id=$CLIENT_ID" \
         -d "client_secret=$CLIENT_SECRET" \
         -d "scope=PRINCIPAL_ROLE:ALL" | awk -F\" '{print $4}'| tr -d '[:space:]')" | sed -i '' "s/^PRINCIPAL_TOKEN=.*/$(cat)/" .env
+
+  rest:test-iceberg-spec:
+    dotenv: [".env"]
+    deps: [rest:get-auth-token]
+    cmds:
+      - |
+        curl -X 'GET' \
+        'http://localhost:8181/api/catalog/v1/polaris/namespaces' \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+        -H 'accept: application/json'
+      - |
+        curl -X 'GET' \
+        'http://localhost:8181/api/catalog/v1/config' \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+        -H 'accept: application/json' \
+        -d '{
+          "warehouse": "file:///tmp/polaris/"
+        }'
 
   rest:get-auth-token-debug:
     dotenv: [".env"]
