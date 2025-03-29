@@ -22,6 +22,9 @@ services:
       AWS_REGION: $AWS_REGION
       AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
       AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+      AZURE_TENANT_ID: $AZURE_TENANT_ID
+      AZURE_CLIENT_ID: $AZURE_CLIENT_ID
+      AZURE_CLIENT_SECRET: $AZURE_CLIENT_SECRET
       JAVA_DEBUG: "true"
       JAVA_DEBUG_PORT: "*:5005"
       polaris.persistence.type: eclipse-link
@@ -29,6 +32,8 @@ services:
       polaris.realm-context.realms: POLARIS
       quarkus.otel.sdk.disabled: "true"
       QUARKUS_LOG_LEVEL: DEBUG
+      HADOOP_HOME: /home/polaris/hadoop
+      hadoop.home.dir: /home/polaris/hadoop
 
     healthcheck:
       test: ["CMD", "curl", "http://localhost:8182/healthcheck"]
@@ -42,6 +47,12 @@ services:
       - engineer_client_secret
       - hr_client_id
       - hr_client_secret
+    # Create hadoop folder and export variable
+    command: >
+      bash -c "
+        mkdir -p /home/polaris/hadoop &&
+        export HADOOP_HOME=/home/polaris/hadoop &&
+        java -jar /deployments/quarkus-run.jar"
 
   polaris-bootstrap:
     # IMPORTANT: the image MUST contain the Postgres JDBC driver and EclipseLink dependencies, see README for instructions

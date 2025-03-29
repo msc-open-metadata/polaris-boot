@@ -254,12 +254,12 @@ tasks:
                "type": "INTERNAL",
                "readOnly": false,
                "properties": {
-                 "default-base-location": "file:///tmp/polaris/"
+                 "default-base-location": "file:///data/"
                },
                "storageConfigInfo": {
                  "storageType": "FILE",
                  "allowedLocations": [
-                   "file:///tmp"
+                   "file:///data/"
                  ]
                }
              }
@@ -278,6 +278,21 @@ tasks:
               "storageType": "s3",
               "allowedLocations": [
                   "http://localhost:9000/warehouse/lake"
+              ]
+          } }'
+  rest:create-catalog-azure:
+    dotenv: [".env"]
+    cmds:
+      - |
+        curl -i -X POST -H "Authorization: Bearer $PRINCIPAL_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' \
+        http://localhost:8181/api/management/v1/catalogs \
+        -d '{"name": "AZURE_CATALOG", "type": "INTERNAL", "properties": {
+              "default-base-location": "'"$AZURE_BUCKET_URI"'"
+          },"storageConfigInfo": {
+              "storageType": "AZURE",
+              "tenantId": "'"$AZURE_TENANT_ID"'",
+              "allowedLocations": [
+              "'"$AZURE_BUCKET_URI"'"
               ]
           } }'
 
@@ -445,6 +460,33 @@ tasks:
           -H "Content-Type: application/json" \
           -d '{"grant": {"type": "catalog", "privilege": "CATALOG_MANAGE_CONTENT"}}'
 
+  rest:azure-catalog:create-catalog-azure-catalog-role:
+    dotenv: [".env"]
+    cmds:
+      - |
+        curl -X POST "http://localhost:8181/api/management/v1/catalogs/AZURE_CATALOG/catalog-roles" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"catalogRole": {"name": "engineer-catalog-role"}}'
+
+  rest:azure-catalog:assign-catalog-role:
+    dotenv: [".env"]
+    cmds:
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/engineer-role/catalog-roles/AZURE_CATALOG" \
+        -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+        -H "Content-Type: application/json" \
+        -d '{"catalogRole": {"name": "engineer-catalog-role"}}'
+
+  rest:azure-catalog:grant-catalog-role-privelege:
+    dotenv: [".env"]
+    cmds:
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/AZURE_CATALOG/catalog-roles/engineer-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "CATALOG_MANAGE_CONTENT"}}'
+
   rest:bootstrap-engineer:
     deps:
       - rest:get-auth-token
@@ -456,3 +498,11 @@ tasks:
       - task rest:create-catalog-role
       - task rest:assign-catalog-role
       - task rest:grant-catalog-role-privelege
+
+  rest:azure-catalog:bootstrap-engineer:
+    deps:
+      - rest:bootstrap-engineer
+    cmds:
+      - task rest:azure-catalog:create-catalog-azure-catalog-role
+      - task rest:azure-catalog:assign-catalog-role
+      - task rest:azure-catalog:grant-catalog-role-privelege
