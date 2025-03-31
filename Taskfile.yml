@@ -189,6 +189,9 @@ tasks:
   docker:compose:up-polaris-spark-local-postgres:
     cmds:
       - docker compose -f polaris-spark-local-postgres/docker-compose.yml up
+  docker:compose:up-polaris-postgres:
+    cmds:
+      - docker compose -f polaris-spark-local-postgres/docker-compose-slim.yml up
 
   docker:compose:up-polaris-spark-minio:
     cmds:
@@ -460,32 +463,70 @@ tasks:
           -H "Content-Type: application/json" \
           -d '{"grant": {"type": "catalog", "privilege": "CATALOG_MANAGE_CONTENT"}}'
 
-  rest:azure-catalog:create-catalog-azure-catalog-role:
+  rest:azure-catalog:create-principal-role:
+    dotenv: [".env"]
+    cmds:
+      - |
+        curl -X POST "http://localhost:8181/api/management/v1/principal-roles" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"principalRole": {"name": "azure-engineer-role"}}'
+
+  rest:azure-catalog:assign-principal-role:
+    dotenv: [".env"]
+    cmds:
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/principals/engineer/principal-roles" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"principalRole": {"name": "azure-engineer-role"}}'
+
+  rest:azure-catalog:create-catalog-role:
     dotenv: [".env"]
     cmds:
       - |
         curl -X POST "http://localhost:8181/api/management/v1/catalogs/AZURE_CATALOG/catalog-roles" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
-          -d '{"catalogRole": {"name": "engineer-catalog-role"}}'
+          -d '{"catalogRole": {"name": "azure-engineer-catalog-role"}}'
 
   rest:azure-catalog:assign-catalog-role:
     dotenv: [".env"]
     cmds:
       - |
-        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/engineer-role/catalog-roles/AZURE_CATALOG" \
+        curl -X PUT "http://localhost:8181/api/management/v1/principal-roles/azure-engineer-role/catalog-roles/AZURE_CATALOG" \
         -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"catalogRole": {"name": "engineer-catalog-role"}}'
+        -d '{"catalogRole": {"name": "azure-engineer-catalog-role"}}'
 
   rest:azure-catalog:grant-catalog-role-privelege:
     dotenv: [".env"]
     cmds:
       - |
-        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/AZURE_CATALOG/catalog-roles/engineer-catalog-role/grants" \
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/AZURE_CATALOG/catalog-roles/azure-engineer-catalog-role/grants" \
           -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
           -H "Content-Type: application/json" \
           -d '{"grant": {"type": "catalog", "privilege": "CATALOG_MANAGE_CONTENT"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/AZURE_CATALOG/catalog-roles/azure-engineer-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "TABLE_FULL_METADATA"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/AZURE_CATALOG/catalog-roles/azure-engineer-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "TABLE_WRITE_DATA"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/AZURE_CATALOG/catalog-roles/azure-engineer-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "TABLE_READ_DATA"}}'
+      - |
+        curl -X PUT "http://localhost:8181/api/management/v1/catalogs/AZURE_CATALOG/catalog-roles/azure-engineer-catalog-role/grants" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{"grant": {"type": "catalog", "privilege": "CREATE_TABLE"}}'
 
   rest:bootstrap-engineer:
     deps:
@@ -501,8 +542,12 @@ tasks:
 
   rest:azure-catalog:bootstrap-engineer:
     deps:
-      - rest:bootstrap-engineer
+      - rest:get-auth-token
     cmds:
-      - task rest:azure-catalog:create-catalog-azure-catalog-role
+      - task rest:create-catalog-azure
+      - task rest:create-principal-user
+      - task rest:azure-catalog:create-principal-role
+      - task rest:azure-catalog:assign-principal-role
+      - task rest:azure-catalog:create-catalog-role
       - task rest:azure-catalog:assign-catalog-role
       - task rest:azure-catalog:grant-catalog-role-privelege
