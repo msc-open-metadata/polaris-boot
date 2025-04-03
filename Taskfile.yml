@@ -551,3 +551,6 @@ tasks:
       - task rest:azure-catalog:create-catalog-role
       - task rest:azure-catalog:assign-catalog-role
       - task rest:azure-catalog:grant-catalog-role-privelege
+
+  test:
+    cmd: uv run pytest -s

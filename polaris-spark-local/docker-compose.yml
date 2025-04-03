@@ -1,57 +1,89 @@
 services:
-  polaris:
-    image: apache/polaris:latest
+  polaris-postgres:
+    # IMPORTANT: the image MUST contain the Postgres JDBC driver and EclipseLink dependencies, see README for instructions
+    image: apache/polaris
     container_name: polaris
     ports:
+      # API port
       - "8181:8181"
-      - "8182"
-    networks:
-      polaris-quickstart:
+      # Management port (metrics and health checks)
+      - "8182:8182"
+      # Optional, allows attaching a debugger to the Polaris JVM
+      - "5005:5005"
     volumes:
       - ./icebergdata:/data
+      - ./assets/eclipselink/:/deployments/config/eclipselink
     environment:
-      - AWS_REGION=$AWS_REGION
-      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-    healthcheck:
-          test: ["CMD", "curl", "http://localhost:8182/healthcheck"]
-          interval: 10s
-          timeout: 10s
-          retries: 5
+      AWS_REGION: $AWS_REGION
+      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+      AZURE_TENANT_ID: $AZURE_TENANT_ID
+      AZURE_CLIENT_ID: $AZURE_CLIENT_ID
+      AZURE_CLIENT_SECRET: $AZURE_CLIENT_SECRET
+      JAVA_DEBUG: "true"
+      JAVA_DEBUG_PORT: "*:5005"
+      polaris.persistence.type: eclipse-link
+      polaris.persistence.eclipselink.configuration-file: /deployments/config/eclipselink/persistence.xml
+      polaris.realm-context.realms: POLARIS
+      quarkus.otel.sdk.disabled: "true"
+      QUARKUS_LOG_LEVEL: DEBUG
+      HADOOP_HOME: /home/polaris/hadoop
+      hadoop.home.dir: /home/polaris/hadoop
 
-  jupyter-spark:
-    image: spark-jupyter
-    ports:
-      - "8888:8888"
-    environment:
-      - AWS_REGION=$AWS_REGION
-      - AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-      - AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-      - POLARIS_HOST=polaris
-    container_name: spark
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:8182/healthcheck"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
     networks:
-      polaris-quickstart:
+      - iceberg_net
+    secrets:
+      - engineer_client_id
+      - engineer_client_secret
+      - hr_client_id
+      - hr_client_secret
+    # Create hadoop folder and export variable
+    command: >
+      bash -c "
+        mkdir -p /home/polaris/hadoop &&
+        export HADOOP_HOME=/home/polaris/hadoop &&
+        java -jar /deployments/quarkus-run.jar"
+
+  spark-iceberg:
+    image: tabulario/spark-iceberg
+    container_name: spark-iceberg
+    build: spark/
+    networks:
+      iceberg_net:
     depends_on:
-      polaris:
-        condition: service_healthy
+      - polaris-postgres
     volumes:
-      - ./icebergdata:/data
-      - ./notebooks:/home/docker/notebooks
+      - ./warehouse:/home/iceberg/warehouse
+      - ./notebooks:/home/iceberg/notebooks/notebooks
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+    ports:
+      - 8888:8888
+      - 8080:8080
+      - 10000:10000
+      - 10001:10001
     secrets:
       - engineer_client_id
       - engineer_client_secret
       - hr_client_id
       - hr_client_secret
 
-networks:
-  polaris-quickstart:
-
 secrets:
   engineer_client_id:
-    file: secrets/engineer-client-id
+    file: ../secrets/engineer-client-id
   engineer_client_secret:
-    file: secrets/engineer-client-secret
+    file: ../secrets/engineer-client-secret
   hr_client_id:
     file: ../secrets/hr-client-id
   hr_client_secret:
     file: ../secrets/hr-client-secret
+
+networks:
+  iceberg_net:
