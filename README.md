@@ -1,11 +1,21 @@
 # polaris-boot
 
 Repository containing:
-- Infrastructure for booting an instance of Apache Polaris that runs locally or in S3 using Spark
+- Infrastructure for booting an instance of Apache Polaris that runs locally or in Azure using Spark
 - Documentation on adding additional functionality to our polaris fork:
 
 ## Getting started:
-1. Install task and initialize dev env
+
+### Prerequisuites:
+- A unix shell
+- Docker & docker-compose
+- Task
+- Java version >= 21
+
+Note: If you are on windows we make no guarentee that task/taskfile behave as intended.
+- If this is the case. Go to the directories used in the tasks and execute the commands manually.
+
+1. Install and initialize venv, init secrets,
 ```bash
 # init commitlint and secret files
 task init
@@ -14,34 +24,44 @@ task init
 ```bash
 git clone https://github.com/msc-open-metadata/polaris.git ..
 
+task build:build:polaris-local
+
 # Apache Polaris is built using Gradle with Java 21+ and Docker 27+
-task docker:build:polaris-local
+task build:polaris-opendic-postgres-admin
 ```
 
-3. Clone and build the spark repository
+3. Run the docker-compose file. Docker required. Depending on which version you have build. Choose docker-compose task accordingly.
 ```bash
-git clone https://github.com/apache/spark.git ..
-# Switch to 3.5
-# git checkout branch-3.5
+# Build with in-memory metastore, polaris, and jupyter/spack container.
+task docker:compose:up-polaris-spark-local
 
-task docker:build:spark
+# Lean build with postgres metastore and polaris
+task docker:compose:up-polaris-postgres
+
+# Heavy build with spark/jupyter notebook container.
+task docker:compose:up-polaris-spark-local-postgres
 ```
 
-4. Building the spark-jupyter image and running the application
-```bash
-task docker:build:spark-jupyter-image docker:compose:up-polaris-spark-local
-```
+4. Bootstrapping an engineer and hr principal. Creates the local catalog, an engineer principal, an engineer principal role, an engineer catalog role, and grants MANAGE_CATALOG priveleges to the engineer principal.
 
-5. Bootstrapping an engineer and hr principal:
+The hr principal get read only grants.
+
+Note: You can explore the principal and other polaris entities by accessing the entities table in your postgres instance using fx, pgadmin. (Pass)
 ```bash
 task rest:bootstrap-engineer
 task rest:bootstrap-hr
 ```
 
-6. Open local notebook.
+5. Open local notebook.
   The spark-jupyter container outputs a URL with a token to the local jupyter instance
-  - Open then local notebook. Example: curl http://localhost:8888/?token=<token>
+  - Open then local notebook. Example: curl http://localhost:8888/
 
+The notebook we use to for testing the opendict implementation in polaris and the spark catalog is: `polaris-spark-local-postgres/notebooks/Iceberg - Getting Started.ipynb`
+
+6. Running the e2e test suite:
+```
+task test
+```
 
 
 ## Changes in open-metadata/polaris
