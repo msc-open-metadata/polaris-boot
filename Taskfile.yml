@@ -154,11 +154,11 @@ tasks:
     dir: ../polaris
     cmds:
       - |
-        ../gradlew clean :polaris-quarkus-server:assemble \
+        ./gradlew clean :polaris-quarkus-server:assemble \
         -Dquarkus.container-image.build=true \
         -PincludeOpendic=true \
         --no-build-cache
-      - docker image rmi apache/polaris:1.0.0-incubating-SNAPSHOT apache/polaris-admin-tool:1.0.0-incubating-SNAPSHOT
+      - docker image rmi apache/polaris:1.0.0-incubating-SNAPSHOT
       - docker image prune
 
   build:polaris-opendic-postgres-admin:
