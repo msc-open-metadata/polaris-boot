@@ -9,8 +9,9 @@ Repository containing:
 ### Prerequisuites:
 - A unix shell
 - Docker & docker-compose
+- uv
 - Task
-- Java version >= 21
+- Java version >= 22
 
 Note: If you are on windows we make no guarentee that task/taskfile behave as intended.
 - If this is the case. Go to the directories used in the tasks and execute the commands manually.
@@ -24,7 +25,7 @@ task init
 ```bash
 git clone https://github.com/msc-open-metadata/polaris.git ..
 
-task build:build:polaris-local
+task build:polaris-local
 
 # Apache Polaris is built using Gradle with Java 21+ and Docker 27+
 task build:polaris-opendic-postgres-admin
@@ -59,15 +60,14 @@ task rest:bootstrap-hr
 The notebook we use to for testing the opendict implementation in polaris and the spark catalog is: `polaris-spark-local-postgres/notebooks/Iceberg - Getting Started.ipynb`
 
 6. Running the e2e test suite:
-```
+```bash
 task test
 ```
 
 
 ## Changes in open-metadata/polaris
 
-- Add spec/open-dic-service.yml
--
+- WIP
 
 ## Adding a new endpoint to Polaris:
 

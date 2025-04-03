@@ -5,6 +5,7 @@ tasks:
     desc: init repo
     cmds:
       - task: init:pre-commit
+      - uv venv
       - uv sync
       - mkdir -p secrets
       - touch secrets/hr-client-id secrets/hr-client-secret secrets/engineer-client-secret secrets/engineer-client-id
