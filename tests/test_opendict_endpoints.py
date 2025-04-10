@@ -12,7 +12,7 @@ Polaris opendic end-2-end tests.
 
 EXAMPLE_PLATFORM_MAPPING = {
     "platformMapping": {
-        "typeName": "and_func",
+        "typeName": "function",
         "platformName": "snowflake",
         "syntax": "CREATE OR ALTER <type> <signature>\n    RETURNS <return_type>\n    LANGUAGE <language>\n    RUNTIME = <runtime>\n    HANDLER = '<name>'\n    AS $$\n<def>\n$$",
         "objectDumpMap": {
@@ -36,8 +36,8 @@ EXAMPLE_UDO = {
             "def": "def foo(arg1, arg2):\n    return arg1 + arg2",
             "comment": "test fun",
             "runtime": "3.12",
-            "client_version": "1",
-            "return_type": "number",
+            "client_version": 1,
+            "return_type": "int",
             "signature": "foo(arg1: str, arg2: int) -> str",
         },
     }
@@ -161,7 +161,7 @@ def test_004_create_duplicate_function_udo():
 
 
 def test_005_show_function_udo():
-    test_name = "test_004_show_function_udo()"
+    test_name = "test_005_show_function_udo()"
     headers = {"Authorization": f"Bearer {TOKEN}"}
 
     response: requests.Response = requests.get("http://localhost:8181/api/opendic/v1/objects/function/", headers=headers)
@@ -174,7 +174,7 @@ def test_005_show_function_udo():
 
 
 def test_006_add_platform_mapping():
-    test_name = "test_005_add_platform_mapping()"
+    test_name = "test_006_add_platform_mapping()"
     headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
     data = json.dumps(EXAMPLE_PLATFORM_MAPPING)
     type = "function"
@@ -189,7 +189,7 @@ def test_006_add_platform_mapping():
     assert response.status_code == 201
 
 def test_007_add_duplicate_platform_mapping():
-    test_name = "test_005_add_platform_mapping()"
+    test_name = "test_007_add_duplicate_platform_mapping()"
     headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
     data = json.dumps(EXAMPLE_PLATFORM_MAPPING)
     type = "function"
@@ -205,7 +205,7 @@ def test_007_add_duplicate_platform_mapping():
 
 
 def test_008_show_all_mappings():
-    test_name = "006_show_all_mappings"
+    test_name = "008_show_all_mappings"
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response: requests.Response = requests.get("http://localhost:8181/api/opendic/v1/platforms", headers=headers)
 
@@ -215,8 +215,8 @@ def test_008_show_all_mappings():
     assert len(response.json()) == 1
 
 
-def test_008_show_snowflake_mappings():
-    test_name = "007_show_snowflake_mappings"
+def test_009_show_snowflake_mappings():
+    test_name = "009_show_snowflake_mappings"
     headers = {"Authorization": f"Bearer {TOKEN}"}
     response: requests.Response = requests.get("http://localhost:8181/api/opendic/v1/platforms/snowflake", headers=headers)
 
@@ -224,6 +224,29 @@ def test_008_show_snowflake_mappings():
 
     assert response.status_code in {200}
     assert len(response.json()) == 1
+
+def test_010_show_udo_mappings():
+    test_name = "test_010_show_function_mappings"
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    type:str = EXAMPLE_UDO["udo"]["type"]
+    response: requests.Response = requests.get(f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms", headers=headers)
+
+    pretty_print_test_result(test_name, response)
+
+    assert response.status_code in {200}
+    assert len(response.json()) == 1
+
+def test_011_get_udo_platform_mapping():
+    test_name = "test_011_get_udo_platform_mapping"
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    type:str = EXAMPLE_UDO["udo"]["type"]
+    platform:str =EXAMPLE_PLATFORM_MAPPING["platformMapping"]["platformName"]
+    response: requests.Response = requests.get(f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms/{platform}", headers=headers)
+
+    pretty_print_test_result(test_name, response)
+
+    assert response.status_code in {200}
+
 
 
 def test_00X_drop_function_udo():
