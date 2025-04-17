@@ -9,12 +9,22 @@ from requests.exceptions import HTTPError
 """
 Polaris opendic end-2-end tests.
 """
+EXAMPLE_SYNTAX = """CREATE OR ALTER <type> <name>(<args>)
+    RETURNS <return_type>
+    LANGUAGE <language>
+    PACKAGES = (<packages>)
+    RUNTIME = <runtime>
+    HANDLER = '<name>'
+    AS $$
+    <def>
+    $$
+"""
 
 EXAMPLE_PLATFORM_MAPPING = {
     "platformMapping": {
         "typeName": "function",
         "platformName": "snowflake",
-        "syntax": "CREATE OR ALTER <type> <signature>\n    RETURNS <return_type>\n    LANGUAGE <language>\n    RUNTIME = <runtime>\n    HANDLER = '<name>'\n    AS $$\n<def>\n$$",
+        "syntax": EXAMPLE_SYNTAX,
         "objectDumpMap": {
             "args": {
                 "propType": "map",
@@ -31,9 +41,10 @@ EXAMPLE_UDO = {
         "type": "function",
         "name": "foo",
         "props": {
-            "args": {"arg1": "number", "arg2": "number"},
+            "args": {"arg1": "int", "arg2": "int"},
             "language": "python",
-            "def": "def foo(arg1, arg2):\n    return arg1 + arg2",
+            "def": "def foo(arg1, arg2):\n      return arg1 + arg2",
+            "packages": ["pandas", "numpy"],
             "comment": "test fun",
             "runtime": "3.12",
             "client_version": 1,
@@ -107,6 +118,7 @@ def test_001_define_function_udo():
                 "args": "MAP",
                 "language": "STRING",
                 "def": "string",
+                "packages": "list",
                 "comment": "string",
                 "runtime": "string",
                 "client_version": "int",
@@ -188,6 +200,7 @@ def test_006_add_platform_mapping():
 
     assert response.status_code == 201
 
+
 def test_007_add_duplicate_platform_mapping():
     test_name = "test_007_add_duplicate_platform_mapping()"
     headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
@@ -225,10 +238,11 @@ def test_009_show_snowflake_mappings():
     assert response.status_code in {200}
     assert len(response.json()) == 1
 
+
 def test_010_show_udo_mappings():
     test_name = "test_010_show_function_mappings"
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    type:str = EXAMPLE_UDO["udo"]["type"]
+    type: str = EXAMPLE_UDO["udo"]["type"]
     response: requests.Response = requests.get(f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms", headers=headers)
 
     pretty_print_test_result(test_name, response)
@@ -236,17 +250,36 @@ def test_010_show_udo_mappings():
     assert response.status_code in {200}
     assert len(response.json()) == 1
 
+
 def test_011_get_udo_platform_mapping():
     test_name = "test_011_get_udo_platform_mapping"
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    type:str = EXAMPLE_UDO["udo"]["type"]
-    platform:str =EXAMPLE_PLATFORM_MAPPING["platformMapping"]["platformName"]
-    response: requests.Response = requests.get(f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms/{platform}", headers=headers)
+    type: str = EXAMPLE_UDO["udo"]["type"]
+    platform: str = EXAMPLE_PLATFORM_MAPPING["platformMapping"]["platformName"]
+    response: requests.Response = requests.get(
+        f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms/{platform}", headers=headers
+    )
 
     pretty_print_test_result(test_name, response)
 
     assert response.status_code in {200}
 
+
+def test_012_pull_statement():
+    test_name = "test_012_pull_statement"
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    type = "function"
+    platform = "snowflake"
+    response: requests.Response = requests.get(
+        f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms/{platform}/pull", headers=headers
+    )
+
+    pretty_print_test_result(test_name, response)
+
+    statements = response.json()
+    assert response.status_code in {200}
+    assert len(response.json())
+    assert "CREATE OR ALTER function foo" in statements[0]["definition"]
 
 
 def test_00X_drop_function_udo():
@@ -267,6 +300,7 @@ def test_OOY_drop_snowflake_mappings():
     pretty_print_test_result(test_name, response)
 
     assert response.status_code in {200}
+
 
 def test_00Z_drop_non_existent():
     test_name = "00Z_drop_non_existent"
