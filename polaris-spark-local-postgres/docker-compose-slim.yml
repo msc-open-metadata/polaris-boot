@@ -94,6 +94,8 @@ secrets:
     file: ../secrets/hr-client-id
   hr_client_secret:
     file: ../secrets/hr-client-secret
+  snowflake-conf:
+    file: ../secrets/snowflake-conf.toml
 
 networks:
   iceberg_net:

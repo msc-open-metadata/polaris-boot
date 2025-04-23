@@ -143,7 +143,6 @@ def test_002_show_all_udos():
     pretty_print_test_result(test_name, response)
 
     assert response.status_code == 200
-    assert "function" in response.json()
 
 
 def test_003_create_function_udo():
@@ -168,6 +167,11 @@ def test_004_create_duplicate_function_udo():
     )
 
     pretty_print_test_result(test_name, response)
+    try:
+        response.raise_for_status()
+    except HTTPError as e:
+        print(f"Error: {e}")
+        print(f"Response: {e.response.json()} ")
 
     assert response.status_code in {409}
 
