@@ -286,6 +286,21 @@ def test_012_pull_statement():
     assert "CREATE OR ALTER function foo" in statements[0]["definition"]
 
 
+def test_013_alter_function():
+    test_name = "test_013_alter_function()"
+    headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
+    updated_UDO = EXAMPLE_UDO.copy()
+    updated_UDO["udo"]["props"] = {"args": {"arg1": "int", "arg2": "int"}, "language": "python", "def": "def foo(arg1, arg2):\n      return arg1 - arg2"}
+    data = json.dumps(EXAMPLE_UDO)
+    response: requests.Response = requests.put(
+        "http://localhost:8181/api/opendic/v1/objects/function/foo", headers=headers, data=data
+    )
+
+    pretty_print_test_result(test_name, response)
+
+    assert response.status_code in {200}
+
+
 def test_00X_drop_function_udo():
     test_name = "00X_drop_function_udo"
     headers = {"Authorization": f"Bearer {TOKEN}"}
