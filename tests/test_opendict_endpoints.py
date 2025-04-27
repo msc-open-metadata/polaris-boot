@@ -286,11 +286,29 @@ def test_012_pull_statement():
     assert "CREATE OR ALTER function foo" in statements[0]["definition"]
 
 
-def test_013_alter_function():
-    test_name = "test_013_alter_function()"
+def test_013_pull_all_object_statements():
+    test_name = "test_013_pull_all_object_statements()"
+    headers = {"Authorization": f"Bearer {TOKEN}"}
+    platform = "snowflake"
+    response: requests.Response = requests.get(f"http://localhost:8181/api/opendic/v1/platforms/{platform}/pull", headers=headers)
+
+    pretty_print_test_result(test_name, response)
+
+    statements = response.json()
+    assert response.status_code == 200
+    assert len(response.json()) > 0
+    assert "CREATE OR ALTER function foo" in statements[0]["definition"]
+
+
+def test_014_alter_function():
+    test_name = "test_014_alter_function()"
     headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
     updated_UDO = EXAMPLE_UDO.copy()
-    updated_UDO["udo"]["props"] = {"args": {"arg1": "int", "arg2": "int"}, "language": "python", "def": "def foo(arg1, arg2):\n      return arg1 - arg2"}
+    updated_UDO["udo"]["props"] = {
+        "args": {"arg1": "int", "arg2": "int"},
+        "language": "python",
+        "def": "def foo(arg1, arg2):\n      return arg1 - arg2",
+    }
     data = json.dumps(EXAMPLE_UDO)
     response: requests.Response = requests.put(
         "http://localhost:8181/api/opendic/v1/objects/function/foo", headers=headers, data=data
