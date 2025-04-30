@@ -47,6 +47,18 @@ tasks:
         --no-build-cache
       - docker image prune
 
+  build:opendic:polaris-postgres:
+    desc: build polaris with postgres as metastore, the opendic extension, and the admintool for bootstrapping
+    dir: ../polaris
+    cmds:
+      - |
+        ./gradlew clean :polaris-quarkus-server:assemble \
+        -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
+        -Dquarkus.container-image.build=true \
+        -PincludeOpendic=true \
+        --no-build-cache
+      - docker image prune
+
   build:opendic:polaris-postgres-admin:
     desc: build polaris with postgres as metastore, the opendic extension, and the admintool for bootstrapping
     dir: ../polaris
