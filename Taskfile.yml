@@ -65,16 +65,22 @@ tasks:
     cmds:
       - docker build -t "spark-jupyter" -f Dockerfile .
 
-  docker:compose:polaris-spark-local:
+  docker:polaris-spark-inmemory:
+    desc: docker compose polaris with spark and in-memory meta store
     cmds:
-      - docker compose -f polaris-spark-local/docker-compose.yml up
-  docker:compose:polaris-postgres-spark:
+      - docker compose -f polaris-spark-local/docker-compose.yml up -d
+  docker:polaris-postgres-spark:
+    desc: docker compose polaris with spark and postgres metastore
     cmds:
-      - docker compose -f polaris-spark-local-postgres/docker-compose.yml up
-  docker:compose:polaris-postgres:
+      - docker compose -f polaris-spark-local-postgres/docker-compose.yml up -d
+  docker:polaris-postgres:
+    desc: docker compose polaris with postgres metastore
     cmds:
-      - docker compose -f polaris-spark-local-postgres/docker-compose-slim.yml up
-
+      - docker compose -f polaris-spark-local-postgres/docker-compose-slim.yml up -d
+  docker:polaris-postgres-slim:
+    desc: docker compose polaris with postgres metastore
+    cmds:
+      - docker compose -f polaris-spark-local-postgres/docker-compose-slim-benchmark.yml up -d
 
   rest:get-auth-token:
     dotenv: [".env"]
