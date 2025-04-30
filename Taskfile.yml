@@ -17,132 +17,18 @@ tasks:
       - uv add pre-commit --dev
       - uv run pre-commit install --hook-type commit-msg
 
-  cli-create-catalog-local:
-    desc: create local memory quickstart_catalog
-    dir: ../polaris
-    cmds:
-      - |
-        ./polaris \
-        --client-id ${CLIENT_ID} \
-        --client-secret ${CLIENT_SECRET} \
-        catalogs \
-        create \
-        --storage-type FILE \
-        --default-base-location ${DEFAULT_BASE_LOCATION} \
-        quickstart_catalog
-
-  cli-create-principal:
-    desc: create a principal that has access to manage that catalog
-    dir: ../polaris
-    cmds:
-      - |
-        ./polaris \
-        --client-id ${CLIENT_ID} \
-        --client-secret ${CLIENT_SECRET} \
-        principals \
-        create \
-        quickstart_user
-      - |
-        ./polaris \
-        --client-id ${CLIENT_ID} \
-        --client-secret ${CLIENT_SECRET} \
-        principal-roles \
-        create \
-        quickstart_user_role
-      - |
-        ./polaris \
-        --client-id ${CLIENT_ID} \
-        --client-secret ${CLIENT_SECRET} \
-        catalog-roles \
-        create \
-        --catalog quickstart_catalog \
-        quickstart_catalog_role
-
-  cli-grant-roles:
-    desc: we grant the principal the principal role we created, and grant the catalog role the principal role we created.
-    cmds:
-      - |
-        ./polaris \
-        --client-id ${CLIENT_ID} \
-        --client-secret ${CLIENT_SECRET} \
-        principal-roles \
-        grant \
-        --principal quickstart_user \
-        quickstart_user_role
-      - |
-        ./polaris \
-        --client-id ${CLIENT_ID} \
-        --client-secret ${CLIENT_SECRET} \
-        catalog-roles \
-        grant \
-        --catalog quickstart_catalog \
-        --principal-role quickstart_user_role \
-        quickstart_catalog_role
-
-  cli-assign-privelege:
-    desc: This grants the catalog privileges CATALOG_MANAGE_CONTENT to our catalog role
-    dir: ../polaris
-    cmds:
-      - |
-        ./polaris \
-        --client-id ${CLIENT_ID} \
-        --client-secret ${CLIENT_SECRET} \
-        privileges \
-        catalog \
-        grant \
-        --catalog quickstart_catalog \
-        --catalog-role quickstart_catalog_role \
-        CATALOG_MANAGE_CONTENT
-
-  cli-demo-spark:
-    dir: ../spark
-    desc: Run spark with polaris catalog file location = spark.sql("DESCRIBE FORMATTED quickstart_table").show(false)
-    cmds:
-      - |
-        ./bin/spark-shell \
-        --packages org.apache.iceberg:iceberg-spark-runtime-3.5_2.12:1.7.1,org.apache.hadoop:hadoop-aws:3.4.0 \
-        --conf spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions \
-        --conf spark.sql.catalog.quickstart_catalog.warehouse=quickstart_catalog \
-        --conf spark.sql.catalog.quickstart_catalog.header.X-Iceberg-Access-Delegation=vended-credentials \
-        --conf spark.sql.catalog.quickstart_catalog=org.apache.iceberg.spark.SparkCatalog \
-        --conf spark.sql.catalog.quickstart_catalog.catalog-impl=org.apache.iceberg.rest:RESTCatalog \
-        --conf spark.sql.catalog.quickstart_catalog.uri=http://localhost:8181/api/catalog \
-        --conf spark.sql.catalog.quickstart_catalog.credential=${PRINCIPAL_CLIENT_ID}:${PRINCIPAL_CLIENT_SECRET} \
-        --conf spark.sql.catalog.quickstart_catalog.scope='PRINCIPAL_ROLE:ALL' \
-        --conf spark.sql.catalog.quickstart_catalog.token-refresh-enabled=true \
-        --conf spark.sql.catalog.quickstart_catalog.client.region=us-west-2
-
-  activate-venv:
-    dir: ../polaris
-    cmds:
-      - source polaris-venv/bin/activate
-
-  print-env:
-    dotenv: [".env"]
-    cmd: env
-
-  bootstrap-env:
-    cmds:
-      - export $(grep -v '^#' .envs/polaris-demo.env | xargs)
-
-  catalogs-list:
-    cmds:
-      - ./polaris catalogs list
-
-  docker:build:spark-jupyter-image:
-    dir: polaris-spark-local
-    cmds:
-      - docker build -t "spark-jupyter" -f Dockerfile .
-
-  build:polaris-local:
+  build:polaris-inmemory:
+    desc: Build the polaris catalog with in-memory metastore
     dir: ../polaris
     cmd: ./gradlew clean :polaris-quarkus-server:assemble -Dquarkus.container-image.build=true -PincludeOpendic --no-build-cache
 
-  build:spark:
+  dep:build:spark:
+    desc: DEPRECATED
     dir: ../spark
     cmd: ./build/mvn -DskipTests clean package
 
-  build:polaris-postgres-img:
+  build:polaris-postgres:
+    desc: build polaris with postgres as metastore
     dir: ../polaris
     cmd: |
       ./gradlew clean :polaris-quarkus-server:assemble :polaris-quarkus-admin:assemble \
@@ -150,7 +36,8 @@ tasks:
        -Dquarkus.container-image.build=true \
        --no-build-cache
 
-  build:polaris-opendic:
+  build:opendic:polaris-inmemory:
+    desc: Build the polaris catalog with in-memory metastore and the opendic extension
     dir: ../polaris
     cmds:
       - |
@@ -158,10 +45,10 @@ tasks:
         -Dquarkus.container-image.build=true \
         -PincludeOpendic=true \
         --no-build-cache
-      - docker image rmi apache/polaris:1.0.0-incubating-SNAPSHOT
       - docker image prune
 
-  build:polaris-opendic-postgres-admin:
+  build:opendic:polaris-postgres-admin:
+    desc: build polaris with postgres as metastore, the opendic extension, and the admintool for bootstrapping
     dir: ../polaris
     cmds:
       - |
@@ -171,38 +58,23 @@ tasks:
         -PincludeOpendic=true \
         --no-build-cache
       - docker image prune
-  build:polaris-opendic-postgres:
-    dir: ../polaris
-    cmds:
-      - |
-        ./gradlew clean :polaris-quarkus-server:assemble \
-        -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
-        -Dquarkus.container-image.build=true \
-        -PincludeOpendic=true \
-        --no-build-cache
-      - docker image prune
 
-  docker:compose:up-polaris-spark-local:
+  dep:docker:build:spark-jupyter-image:
+    dir: polaris-spark-local
+    desc: DEPRECATED
+    cmds:
+      - docker build -t "spark-jupyter" -f Dockerfile .
+
+  docker:compose:polaris-spark-local:
     cmds:
       - docker compose -f polaris-spark-local/docker-compose.yml up
-  docker:compose:up-polaris-spark-local-postgres:
+  docker:compose:polaris-postgres-spark:
     cmds:
       - docker compose -f polaris-spark-local-postgres/docker-compose.yml up
-  docker:compose:up-polaris-postgres:
+  docker:compose:polaris-postgres:
     cmds:
       - docker compose -f polaris-spark-local-postgres/docker-compose-slim.yml up
 
-  docker:compose:up-polaris-spark-minio:
-    cmds:
-      - docker compose -f polaris-spark-minio/docker-compose.yml up
-
-  gradle:build-polaris-postgres:
-    dir: ../polaris-fork
-    cmd: |
-      ./gradlew :polaris-quarkus-server:assemble :polaris-quarkus-admin:assemble \
-       -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
-       -Dquarkus.container-image.tag=postgres-latest \
-       -Dquarkus.container-image.build=true
 
   rest:get-auth-token:
     dotenv: [".env"]
