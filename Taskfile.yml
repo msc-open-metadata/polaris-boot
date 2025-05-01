@@ -41,10 +41,11 @@ tasks:
     dir: ../polaris
     cmds:
       - |
-        ./gradlew clean :polaris-quarkus-server:assemble \
-        -Dquarkus.container-image.build=true \
+        ./gradlew \
+        :polaris-quarkus-server:assemble \
+        :polaris-quarkus-server:quarkusAppPartsBuild --rerun \
         -PincludeOpendic=true \
-        --no-build-cache
+        -Dquarkus.container-image.build=true
       - docker image prune
 
   build:opendic:polaris-postgres:
@@ -52,11 +53,12 @@ tasks:
     dir: ../polaris
     cmds:
       - |
-        ./gradlew clean :polaris-quarkus-server:assemble \
-        -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
-        -Dquarkus.container-image.build=true \
-        -PincludeOpendic=true \
-        --no-build-cache
+        ./gradlew \
+         :polaris-quarkus-server:assemble \
+         :polaris-quarkus-server:quarkusAppPartsBuild --rerun \
+         -PincludeOpendic=true \
+         -Dquarkus.container-image.tag=postgres-latest \
+         -Dquarkus.container-image.build=true
       - docker image prune
 
   build:opendic:polaris-postgres-admin:
@@ -64,11 +66,14 @@ tasks:
     dir: ../polaris
     cmds:
       - |
-        ./gradlew clean :polaris-quarkus-server:assemble :polaris-quarkus-admin:assemble \
-        -PeclipseLinkDeps=org.postgresql:postgresql:42.7.4 \
-        -Dquarkus.container-image.build=true \
-        -PincludeOpendic=true \
-        --no-build-cache
+        ./gradlew \
+         :polaris-quarkus-server:assemble \
+         :polaris-quarkus-server:quarkusAppPartsBuild --rerun \
+         :polaris-quarkus-admin:assemble \
+         :polaris-quarkus-admin:quarkusAppPartsBuild --rerun \
+         -PincludeOpendic=true \
+         -Dquarkus.container-image.tag=postgres-latest \
+         -Dquarkus.container-image.build=true
       - docker image prune
 
   dep:docker:build:spark-jupyter-image:
@@ -77,19 +82,24 @@ tasks:
     cmds:
       - docker build -t "spark-jupyter" -f Dockerfile .
 
-  docker:polaris-spark-inmemory:
+  docker:polaris-inmemory-spark:
     desc: docker compose polaris with spark and in-memory meta store
     cmds:
       - docker compose -f polaris-spark-local/docker-compose.yml up -d
+  docker:polaris-inmemory-slim:
+    desc: docker compose polaris with spark and in-memory meta store
+    cmds:
+      - docker compose -f polaris-spark-local/docker-compose-slim.yml up -d
+
   docker:polaris-postgres-spark:
     desc: docker compose polaris with spark and postgres metastore
     cmds:
       - docker compose -f polaris-spark-local-postgres/docker-compose.yml up -d
-  docker:polaris-postgres:
+  docker:polaris-postgres-slim:
     desc: docker compose polaris with postgres metastore
     cmds:
       - docker compose -f polaris-spark-local-postgres/docker-compose-slim.yml up -d
-  docker:polaris-postgres-slim:
+  docker:polaris-postgres-slim-benchmark:
     desc: docker compose polaris with postgres metastore
     cmds:
       - docker compose -f polaris-spark-local-postgres/docker-compose-slim-benchmark.yml up -d
@@ -305,6 +315,14 @@ tasks:
         -H "Authorization: Bearer $PRINCIPAL_TOKEN"
     env:
       CATALOG_ROLE: read-only-catalog-role
+  rest:drop:principal:
+    dotenv: [".env"]
+    cmds:
+      - |
+        curl -X DELETE "http://localhost:8181/api/management/v1/principals/$PRINCIPAL" \
+          -H "Authorization: Bearer $PRINCIPAL_TOKEN"
+    env:
+      PRINCIPAL: engineer
 
   rest:list-catalog-roles-for-principal-role:
     dotenv: [".env"]
