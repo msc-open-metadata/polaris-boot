@@ -53,6 +53,36 @@ EXAMPLE_UDO = {
         },
     }
 }
+EXAMPLE_UDO2 = {
+    "type": "function",
+    "name": "bar",
+    "props": {
+        "args": {"arg1": "int", "arg2": "int"},
+        "language": "python",
+        "def": "def foo(arg1, arg2):\n      return arg1 * arg2",
+        "packages": ["pandas", "numpy"],
+        "comment": "test fun",
+        "runtime": "3.12",
+        "client_version": 1,
+        "return_type": "int",
+        "signature": "foo(arg1: str, arg2: int) -> str",
+    },
+}
+EXAMPLE_UDO3 = {
+    "type": "function",
+    "name": "baz",
+    "props": {
+        "args": {"arg1": "int", "arg2": "int"},
+        "language": "python",
+        "def": "def foo(arg1, arg2):\n      return arg1 - arg2",
+        "packages": ["pandas", "numpy"],
+        "comment": "test fun",
+        "runtime": "3.12",
+        "client_version": 1,
+        "return_type": "int",
+        "signature": "foo(arg1: str, arg2: int) -> str",
+    },
+}
 
 
 def pretty_print_test_result(test_name, response: requests.Response):
@@ -158,6 +188,19 @@ def test_003_create_function_udo():
     assert response.status_code in {201}
 
 
+def test_0035_batch_create_function_udo():
+    test_name = "test_0035_batch_create_function_udo()"
+    headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
+    data = json.dumps([EXAMPLE_UDO2, EXAMPLE_UDO3])
+    response: requests.Response = requests.post(
+        "http://localhost:8181/api/opendic/v1/objects/function/batch", headers=headers, data=data
+    )
+
+    pretty_print_test_result(test_name, response)
+
+    assert response.status_code in {201}
+
+
 def test_004_create_duplicate_function_udo():
     test_name = "test_004_create_duplicate_function_udo()"
     headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
@@ -186,7 +229,7 @@ def test_005_show_function_udo():
 
     assert isinstance(response.json(), list)
     assert response.status_code == 200
-    assert len(response.json()) == 1
+    assert len(response.json()) == 3
 
 
 def test_006_add_platform_mapping():
@@ -283,7 +326,7 @@ def test_012_pull_statement():
     statements = response.json()
     assert response.status_code in {200}
     assert len(response.json())
-    assert "CREATE OR ALTER function foo" in statements[0]["definition"]
+    assert "CREATE OR ALTER function" in statements[0]["definition"]
 
 
 def test_013_pull_all_object_statements():
@@ -297,7 +340,7 @@ def test_013_pull_all_object_statements():
     statements = response.json()
     assert response.status_code == 200
     assert len(response.json()) > 0
-    assert "CREATE OR ALTER function foo" in statements[0]["definition"]
+    assert "CREATE OR ALTER function" in statements[0]["definition"]
 
 
 def test_014_alter_function():
