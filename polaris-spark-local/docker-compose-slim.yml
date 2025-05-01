@@ -1,5 +1,5 @@
 services:
-  polaris-postgres:
+  polaris:
     # IMPORTANT: the image MUST contain the Postgres JDBC driver and EclipseLink dependencies, see README for instructions
     image: apache/polaris
     container_name: polaris
@@ -12,24 +12,14 @@ services:
       - "5005:5005"
     volumes:
       - ./icebergdata:/data
-      - ./assets/eclipselink/:/deployments/config/eclipselink
     environment:
-      AWS_REGION: $AWS_REGION
-      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-      AZURE_TENANT_ID: $AZURE_TENANT_ID
-      AZURE_CLIENT_ID: $AZURE_CLIENT_ID
-      AZURE_CLIENT_SECRET: $AZURE_CLIENT_SECRET
       JAVA_DEBUG: "true"
       JAVA_DEBUG_PORT: "*:5005"
-      polaris.persistence.type: eclipse-link
-      polaris.persistence.eclipselink.configuration-file: /deployments/config/eclipselink/persistence.xml
       polaris.realm-context.realms: POLARIS
       quarkus.otel.sdk.disabled: "true"
       QUARKUS_LOG_LEVEL: DEBUG
       HADOOP_HOME: /home/polaris/hadoop
       hadoop.home.dir: /home/polaris/hadoop
-
     healthcheck:
       test: ["CMD", "curl", "http://localhost:8182/healthcheck"]
       interval: 10s
@@ -48,33 +38,6 @@ services:
         mkdir -p /home/polaris/hadoop &&
         export HADOOP_HOME=/home/polaris/hadoop &&
         java -jar /deployments/quarkus-run.jar"
-
-  spark-iceberg:
-    image: tabulario/spark-iceberg
-    container_name: spark-iceberg
-    build: spark/
-    networks:
-      iceberg_net:
-    depends_on:
-      - polaris-postgres
-    volumes:
-      - ./icebergdata:/data
-      - ./notebooks:/home/iceberg/notebooks/notebooks
-    environment:
-      - AWS_ACCESS_KEY_ID=admin
-      - AWS_SECRET_ACCESS_KEY=password
-      - AWS_REGION=us-east-1
-    ports:
-      - 8888:8888
-      - 8080:8080
-      - 10000:10000
-      - 10001:10001
-    secrets:
-      - engineer_client_id
-      - engineer_client_secret
-      - hr_client_id
-      - hr_client_secret
-
 secrets:
   engineer_client_id:
     file: ../secrets/engineer-client-id
