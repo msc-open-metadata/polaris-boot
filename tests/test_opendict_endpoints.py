@@ -346,15 +346,15 @@ def test_013_pull_all_object_statements():
 def test_014_alter_function():
     test_name = "test_014_alter_function()"
     headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
-    updated_UDO = EXAMPLE_UDO.copy()
+    updated_UDO = {"udo": EXAMPLE_UDO2.copy()}
     updated_UDO["udo"]["props"] = {
         "args": {"arg1": "int", "arg2": "int"},
         "language": "python",
-        "def": "def foo(arg1, arg2):\n      return arg1 - arg2",
+        "def": "def bar(arg1, arg2):\n      return arg1 - arg2",
     }
-    data = json.dumps(EXAMPLE_UDO)
+    data = json.dumps(updated_UDO)
     response: requests.Response = requests.put(
-        "http://localhost:8181/api/opendic/v1/objects/function/foo", headers=headers, data=data
+        "http://localhost:8181/api/opendic/v1/objects/function/bar", headers=headers, data=data
     )
 
     pretty_print_test_result(test_name, response)
