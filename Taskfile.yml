@@ -27,6 +27,11 @@ tasks:
     dir: ../spark
     cmd: ./build/mvn -DskipTests clean package
 
+  build:polaris-clean:
+    desc: Clean the polaris catalog
+    dir: ../polaris
+    cmd: ./gradlew clean
+
   build:polaris-postgres:
     desc: build polaris with postgres as metastore
     dir: ../polaris
