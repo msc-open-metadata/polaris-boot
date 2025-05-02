@@ -20,6 +20,7 @@ services:
       polaris.persistence.type: eclipse-link
       polaris.persistence.eclipselink.configuration-file: /deployments/config/eclipselink/persistence.xml
       polaris.realm-context.realms: POLARIS
+      polaris.authentication.token-broker.max-token-generation: PT24H
       quarkus.otel.sdk.disabled: "true"
       HADOOP_HOME: /home/polaris/hadoop
       hadoop.home.dir: /home/polaris/hadoop
