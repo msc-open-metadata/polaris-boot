@@ -17,6 +17,9 @@ services:
       - ./icebergdata:/data
       - ./assets/eclipselink/:/deployments/config/eclipselink
     environment:
+      AZURE_TENANT_ID: $AZURE_TENANT_ID
+      AZURE_CLIENT_ID: $AZURE_CLIENT_ID
+      AZURE_CLIENT_SECRET: $AZURE_CLIENT_SECRET
       polaris.persistence.type: eclipse-link
       polaris.persistence.eclipselink.configuration-file: /deployments/config/eclipselink/persistence.xml
       polaris.realm-context.realms: POLARIS

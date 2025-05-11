@@ -188,7 +188,7 @@ tasks:
               ]
           } }'
   rest:create-catalog-azure:
-    dotenv: [".env"]
+    dotenv: [".env", "secrets/.env"]
     cmds:
       - |
         curl -i -X POST -H "Authorization: Bearer $PRINCIPAL_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' \
