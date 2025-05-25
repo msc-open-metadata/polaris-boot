@@ -25,6 +25,7 @@ services:
       polaris.realm-context.realms: POLARIS
       polaris.authentication.token-broker.max-token-generation: PT24H
       quarkus.otel.sdk.disabled: "true"
+      QUARKUS_LOG_LEVEL: INFO
       HADOOP_HOME: /home/polaris/hadoop
       hadoop.home.dir: /home/polaris/hadoop
     healthcheck:
