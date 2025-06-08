@@ -1,26 +1,26 @@
 services:
   spark-iceberg:
-      image: tabulario/spark-iceberg
-      container_name: spark-iceberg
-      build: spark/
-      volumes:
-        - ./notebooks:/home/iceberg/notebooks/notebooks
-        - ./icebergdata:/data
-      environment:
-        - AWS_ACCESS_KEY_ID=admin
-        - AWS_SECRET_ACCESS_KEY=password
-        - AWS_REGION=us-east-1
-      ports:
-        - 8888:8888
-        - 8080:8080
-        - 10000:10000
-        - 10001:10001
-      secrets:
-        - engineer_client_id
-        - engineer_client_secret
-        - hr_client_id
-        - hr_client_secret
-        - snowflake-conf
+    image: tabulario/spark-iceberg
+    container_name: spark-iceberg
+    build: spark/
+    volumes:
+      - ./notebooks:/home/iceberg/notebooks/notebooks
+      - ./icebergdata:/data
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+    ports:
+      - 8888:8888
+      - 8080:8080
+      - 10000:10000
+      - 10001:10001
+    secrets:
+      - engineer_client_id
+      - engineer_client_secret
+      - hr_client_id
+      - hr_client_secret
+      - snowflake-conf
 
 secrets:
   engineer_client_id:
