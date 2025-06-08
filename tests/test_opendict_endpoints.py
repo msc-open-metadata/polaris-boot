@@ -6,6 +6,8 @@ import dotenv
 import requests
 from requests.exceptions import HTTPError
 
+POLARIS_BASE_URL = "https://opendict.duckdns.org/api"
+
 """
 Polaris opendic end-2-end tests.
 """
@@ -123,7 +125,7 @@ def get_auth_token() -> str:
         "scope": "PRINCIPAL_ROLE:ALL",
     }
 
-    response: requests.Response = requests.post("http://localhost:8181/api/catalog/v1/oauth/tokens", data=data)
+    response: requests.Response = requests.post(f"{POLARIS_BASE_URL}/catalog/v1/oauth/tokens", data=data)
 
     try:
         TOKEN = response.json()["access_token"]
@@ -157,7 +159,7 @@ def test_001_define_function_udo():
             },
         }
     )
-    response: requests.Response = requests.post("http://localhost:8181/api/opendic/v1/objects/", headers=headers, data=data)
+    response: requests.Response = requests.post(f"{POLARIS_BASE_URL}/opendic/v1/objects/", headers=headers, data=data)
     pretty_print_test_result(test_name, response)
 
     assert response.status_code in {201, 409}
@@ -168,7 +170,7 @@ def test_001_define_function_udo():
 def test_002_show_all_udos():
     test_name = "test_002_show_all_udos()"
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    response: requests.Response = requests.get("http://localhost:8181/api/opendic/v1/objects", headers=headers)
+    response: requests.Response = requests.get(f"{POLARIS_BASE_URL}/opendic/v1/objects", headers=headers)
 
     pretty_print_test_result(test_name, response)
 
@@ -179,9 +181,7 @@ def test_003_create_function_udo():
     test_name = "test_003_create_function_udo()"
     headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
     data = json.dumps(EXAMPLE_UDO)
-    response: requests.Response = requests.post(
-        "http://localhost:8181/api/opendic/v1/objects/function/", headers=headers, data=data
-    )
+    response: requests.Response = requests.post(f"{POLARIS_BASE_URL}/opendic/v1/objects/function/", headers=headers, data=data)
 
     pretty_print_test_result(test_name, response)
 
@@ -193,7 +193,7 @@ def test_0035_batch_create_function_udo():
     headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
     data = json.dumps([EXAMPLE_UDO2, EXAMPLE_UDO3])
     response: requests.Response = requests.post(
-        "http://localhost:8181/api/opendic/v1/objects/function/batch", headers=headers, data=data
+        f"{POLARIS_BASE_URL}/opendic/v1/objects/function/batch", headers=headers, data=data
     )
 
     pretty_print_test_result(test_name, response)
@@ -205,9 +205,7 @@ def test_004_create_duplicate_function_udo():
     test_name = "test_004_create_duplicate_function_udo()"
     headers = {"Authorization": f"Bearer {TOKEN}", "Content-Type": "application/json"}
     data = json.dumps(EXAMPLE_UDO)
-    response: requests.Response = requests.post(
-        "http://localhost:8181/api/opendic/v1/objects/function/", headers=headers, data=data
-    )
+    response: requests.Response = requests.post(f"{POLARIS_BASE_URL}/opendic/v1/objects/function/", headers=headers, data=data)
 
     pretty_print_test_result(test_name, response)
     try:
@@ -223,7 +221,7 @@ def test_005_show_function_udo():
     test_name = "test_005_show_function_udo()"
     headers = {"Authorization": f"Bearer {TOKEN}"}
 
-    response: requests.Response = requests.get("http://localhost:8181/api/opendic/v1/objects/function/", headers=headers)
+    response: requests.Response = requests.get(f"{POLARIS_BASE_URL}/opendic/v1/objects/function/", headers=headers)
 
     pretty_print_test_result(test_name, response)
 
@@ -240,7 +238,7 @@ def test_006_add_platform_mapping():
     platform = "snowflake"
 
     response: requests.Response = requests.post(
-        f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms/{platform}", headers=headers, data=data
+        f"{POLARIS_BASE_URL}/opendic/v1/objects/{type}/platforms/{platform}", headers=headers, data=data
     )
 
     pretty_print_test_result(test_name, response)
@@ -256,7 +254,7 @@ def test_007_add_duplicate_platform_mapping():
     platform = "snowflake"
 
     response: requests.Response = requests.post(
-        f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms/{platform}", headers=headers, data=data
+        f"{POLARIS_BASE_URL}/opendic/v1/objects/{type}/platforms/{platform}", headers=headers, data=data
     )
 
     pretty_print_test_result(test_name, response)
@@ -267,7 +265,7 @@ def test_007_add_duplicate_platform_mapping():
 def test_008_show_all_mappings():
     test_name = "008_show_all_mappings"
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    response: requests.Response = requests.get("http://localhost:8181/api/opendic/v1/platforms", headers=headers)
+    response: requests.Response = requests.get(f"{POLARIS_BASE_URL}/opendic/v1/platforms", headers=headers)
 
     pretty_print_test_result(test_name, response)
 
@@ -278,7 +276,7 @@ def test_008_show_all_mappings():
 def test_009_show_snowflake_mappings():
     test_name = "009_show_snowflake_mappings"
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    response: requests.Response = requests.get("http://localhost:8181/api/opendic/v1/platforms/snowflake", headers=headers)
+    response: requests.Response = requests.get(f"{POLARIS_BASE_URL}/opendic/v1/platforms/snowflake", headers=headers)
 
     pretty_print_test_result(test_name, response)
 
@@ -290,7 +288,7 @@ def test_010_show_udo_mappings():
     test_name = "test_010_show_function_mappings"
     headers = {"Authorization": f"Bearer {TOKEN}"}
     type: str = EXAMPLE_UDO["udo"]["type"]
-    response: requests.Response = requests.get(f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms", headers=headers)
+    response: requests.Response = requests.get(f"{POLARIS_BASE_URL}/opendic/v1/objects/{type}/platforms", headers=headers)
 
     pretty_print_test_result(test_name, response)
 
@@ -304,7 +302,7 @@ def test_011_get_udo_platform_mapping():
     type: str = EXAMPLE_UDO["udo"]["type"]
     platform: str = EXAMPLE_PLATFORM_MAPPING["platformMapping"]["platformName"]
     response: requests.Response = requests.get(
-        f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms/{platform}", headers=headers
+        f"{POLARIS_BASE_URL}/opendic/v1/objects/{type}/platforms/{platform}", headers=headers
     )
 
     pretty_print_test_result(test_name, response)
@@ -318,7 +316,7 @@ def test_012_pull_statement():
     type = "function"
     platform = "snowflake"
     response: requests.Response = requests.get(
-        f"http://localhost:8181/api/opendic/v1/objects/{type}/platforms/{platform}/pull", headers=headers
+        f"{POLARIS_BASE_URL}/opendic/v1/objects/{type}/platforms/{platform}/pull", headers=headers
     )
 
     pretty_print_test_result(test_name, response)
@@ -333,7 +331,7 @@ def test_013_pull_all_object_statements():
     test_name = "test_013_pull_all_object_statements()"
     headers = {"Authorization": f"Bearer {TOKEN}"}
     platform = "snowflake"
-    response: requests.Response = requests.get(f"http://localhost:8181/api/opendic/v1/platforms/{platform}/pull", headers=headers)
+    response: requests.Response = requests.get(f"{POLARIS_BASE_URL}/opendic/v1/platforms/{platform}/pull", headers=headers)
 
     pretty_print_test_result(test_name, response)
 
@@ -353,9 +351,7 @@ def test_014_alter_function():
         "def": "def bar(arg1, arg2):\n      return arg1 - arg2",
     }
     data = json.dumps(updated_UDO)
-    response: requests.Response = requests.put(
-        "http://localhost:8181/api/opendic/v1/objects/function/bar", headers=headers, data=data
-    )
+    response: requests.Response = requests.put(f"{POLARIS_BASE_URL}/opendic/v1/objects/function/bar", headers=headers, data=data)
 
     pretty_print_test_result(test_name, response)
 
@@ -365,7 +361,7 @@ def test_014_alter_function():
 def test_00X_drop_function_udo():
     test_name = "00X_drop_function_udo"
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    response: requests.Response = requests.delete("http://localhost:8181/api/opendic/v1/objects/function", headers=headers)
+    response: requests.Response = requests.delete(f"{POLARIS_BASE_URL}/opendic/v1/objects/function", headers=headers)
 
     pretty_print_test_result(test_name, response)
 
@@ -375,7 +371,7 @@ def test_00X_drop_function_udo():
 def test_OOY_drop_snowflake_mappings():
     test_name = "OOY_drop_snowflake_mappings"
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    response: requests.Response = requests.delete("http://localhost:8181/api/opendic/v1/platforms/snowflake", headers=headers)
+    response: requests.Response = requests.delete(f"{POLARIS_BASE_URL}/opendic/v1/platforms/snowflake", headers=headers)
 
     pretty_print_test_result(test_name, response)
 
@@ -385,7 +381,7 @@ def test_OOY_drop_snowflake_mappings():
 def test_00Z_drop_non_existent():
     test_name = "00Z_drop_non_existent"
     headers = {"Authorization": f"Bearer {TOKEN}"}
-    response: requests.Response = requests.delete("http://localhost:8181/api/opendic/v1/objects/non_existent", headers=headers)
+    response: requests.Response = requests.delete(f"{POLARIS_BASE_URL}/opendic/v1/objects/non_existent", headers=headers)
 
     pretty_print_test_result(test_name, response)
 
