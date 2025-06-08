@@ -80,6 +80,20 @@ tasks:
                  -Dquarkus.container-image.tag=postgres-latest \
                  -Dquarkus.container-image.build=true
             - docker image prune
+    build:opendic:sudo-polaris-postgres-admin:
+        desc: build polaris with postgres as metastore, the opendic extension, and the admintool for bootstrapping
+        dir: ../polaris
+        cmds:
+            - |
+                sudo ./gradlew \
+                 :polaris-quarkus-server:assemble \
+                 :polaris-quarkus-server:quarkusAppPartsBuild --rerun \
+                 :polaris-quarkus-admin:assemble \
+                 :polaris-quarkus-admin:quarkusAppPartsBuild --rerun \
+                 -PincludeOpendic=true \
+                 -Dquarkus.container-image.tag=postgres-latest \
+                 -Dquarkus.container-image.build=true
+            - docker image prune
 
     dep:docker:build:spark-jupyter-image:
         dir: polaris-spark-local
@@ -104,11 +118,11 @@ tasks:
         desc: docker compose polaris with postgres metastore
         cmds:
             - docker compose -f polaris-spark-local-postgres/docker-compose-slim.yml up -d
-    docker:polaris-jdbc:
+    docker:sudo-polaris-jdbc:
         dotenv: [".env"]
         desc: docker compose polaris with jdbc metastore
         cmds:
-            - docker compose -p polaris -f polaris-spark-local-postgres/docker-compose-jdbc.yml up -d
+            - sudo docker compose -p polaris -f polaris-spark-local-postgres/docker-compose-jdbc.yml up -d
     docker:polaris-postgres-slim-benchmark:
         desc: docker compose polaris with postgres metastore
         cmds:
