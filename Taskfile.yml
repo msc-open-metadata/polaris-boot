@@ -118,6 +118,12 @@ tasks:
         desc: docker compose polaris with postgres metastore
         cmds:
             - docker compose -f polaris-spark-local-postgres/docker-compose-slim.yml up -d
+
+    docker:polaris-jdbc:
+        dotenv: [".env"]
+        desc: docker compose polaris with jdbc metastore
+        cmds:
+            - docker compose -p polaris -f polaris-spark-local-postgres/docker-compose-jdbc.yml up -d
     docker:sudo-polaris-jdbc:
         dotenv: [".env"]
         desc: docker compose polaris with jdbc metastore
