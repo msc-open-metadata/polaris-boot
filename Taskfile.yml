@@ -127,10 +127,13 @@ tasks:
         cmds:
             - docker compose -p polaris -f polaris-spark-local-postgres/docker-compose-jdbc.yml up -d
     docker:sudo-polaris-jdbc:
-        dotenv: [".env"]
         desc: docker compose polaris with jdbc metastore
         cmds:
-            - sudo docker compose -p polaris -f polaris-spark-local-postgres/docker-compose-jdbc.yml up -d
+            - sudo docker compose -p polaris -f polaris-spark-local-postgres/docker-compose-jdbc.yml --env-file .env up -d
+    docker:sudo-polaris-jdbc-down:
+        desc: docker compose polaris with jdbc metastore
+        cmds:
+            - udo docker compose -f  polaris-spark-local-postgres/docker-compose-jdbc.yml down
     docker:polaris-postgres-slim-benchmark:
         desc: docker compose polaris with postgres metastore
         cmds:
@@ -146,6 +149,28 @@ tasks:
                 -d "client_id=$CLIENT_ID" \
                 -d "client_secret=$CLIENT_SECRET" \
                 -d "scope=PRINCIPAL_ROLE:ALL" | awk -F\" '{print $4}'| tr -d '[:space:]')" | sed -i '' "s/^PRINCIPAL_TOKEN=.*/$(cat)/" .env
+    rest:get-auth-token-linux:
+        dotenv: [".env"]
+        desc: Fetch OAuth token and update .env
+        vars:
+            TOKEN_CMD: >
+                curl -s -X POST
+                http://localhost:8181/api/catalog/v1/oauth/tokens
+                -d "grant_type=client_credentials"
+                -d "client_id=${CLIENT_ID}"
+                -d "client_secret=${CLIENT_SECRET}"
+                -d "scope=PRINCIPAL_ROLE:ALL"
+                | awk -F'"' '{print $4}' | tr -d '[:space:]'
+        cmds:
+            - echo "Fetching OAuth token..."
+            - |
+                TOKEN=$({{.TOKEN_CMD}})
+                if grep -q '^PRINCIPAL_TOKEN=' .env; then
+                  sed -i "s/^PRINCIPAL_TOKEN=.*/PRINCIPAL_TOKEN=$TOKEN/" .env
+                else
+                  echo "PRINCIPAL_TOKEN=$TOKEN" >> .env
+                fi
+            - echo "Updated .env with new token."
 
     rest:test-iceberg-spec:
         dotenv: [".env"]
@@ -479,9 +504,32 @@ tasks:
             - task rest:assign-catalog-role
             - task rest:grant-catalog-role-privelege
 
+    rest:bootstrap-engineer-linux:
+        deps:
+            - rest:get-auth-token-linux
+        cmds:
+            - task rest:create-catalog-local
+            - task rest:create-principal-user
+            - task rest:create-principal-role
+            - task rest:assign-principal-role
+            - task rest:create-catalog-role
+            - task rest:assign-catalog-role
+            - task rest:grant-catalog-role-privelege
+
     rest:azure-catalog:bootstrap-engineer:
         deps:
             - rest:get-auth-token
+        cmds:
+            - task rest:create-catalog-azure
+            - task rest:create-principal-user
+            - task rest:azure-catalog:create-principal-role
+            - task rest:azure-catalog:assign-principal-role
+            - task rest:azure-catalog:create-catalog-role
+            - task rest:azure-catalog:assign-catalog-role
+            - task rest:azure-catalog:grant-catalog-role-privelege
+    rest:azure-catalog:bootstrap-engineer-linux:
+        deps:
+            - rest:get-auth-token-linux
         cmds:
             - task rest:create-catalog-azure
             - task rest:create-principal-user

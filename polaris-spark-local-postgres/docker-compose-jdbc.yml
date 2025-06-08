@@ -116,3 +116,4 @@ secrets:
 
 networks:
     iceberg_net:
+        driver: bridge
