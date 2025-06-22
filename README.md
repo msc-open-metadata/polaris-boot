@@ -7,7 +7,7 @@ This infrastructure repository was developed at ITU as part of a the Master thes
 **Purpose**: This repository served multiple purposes in the development of OpenDict Polaris:
 
 1. Stores docker-compose infrastructure and utility code for builing and deploying a local Apache Polaris with the OpenDict extension.
-2. Eases bootstrapping of polaris and infrastructure setup via tasks in taskfile.  
+2. Eases bootstrapping of polaris and infrastructure setup via tasks in taskfile.
 3. Contains integrations tests hitting the endpoints of a local OpenDict Polaris deployment
 4. Contains sample Jupyer notebooks from OpenDict Polaris demoing and testing.
 
@@ -20,11 +20,11 @@ This infrastructure repository was developed at ITU as part of a the Master thes
 - `utils`: util scripts, e.g., for storing principle credential in evn file.
 - `taskfile.yml`: collection of tasks for building, running, and bootstrapping OpenDict Polaris.
 
-## Examples
+## Demo
 
-![alt text](<assets/Screenshot 2025-06-02 at 03.31.13.png>)
-![alt text](<assets/Screenshot 2025-06-02 at 03.31.49.png>)
-![alt text](<assets/Screenshot 2025-06-02 at 03.33.47.png>)
+[Full demo](https://www.youtube.com/watch?v=OLFZZZAcOqQ)
+![alt text](<assets/demo-scenario.gif>)
+![alt text](<assets/demo-demo.gif>)
 
 ## Getting started
 
