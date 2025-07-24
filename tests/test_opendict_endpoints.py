@@ -6,7 +6,8 @@ import dotenv
 import requests
 from requests.exceptions import HTTPError
 
-POLARIS_BASE_URL = "https://opendict.duckdns.org/api"
+# POLARIS_BASE_URL = "https://opendict.duckdns.org/api"
+POLARIS_BASE_URL = "http://localhost:8181/api"
 
 """
 Polaris opendic end-2-end tests.
